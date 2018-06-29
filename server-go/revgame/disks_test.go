@@ -1,4 +1,4 @@
-package revmodels
+package revgame
 
 import (
 	"testing"

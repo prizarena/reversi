@@ -1,11 +1,11 @@
-package revmodels
+package revgame
 
 import (
 	"github.com/prizarena/turn-based"
 	"github.com/pkg/errors"
 )
 
-type Disks uint64
+type Disks int64
 
 var ErrAlreadyOccupied = errors.New("cell already occupied")
 var ErrNotOccupied = errors.New("cell is not occupied")
