@@ -87,11 +87,11 @@ func (b Board) Rows() (rows [8][8]string) {
 	return
 }
 
-func (board Board) DrawBoard(colSeparator, rowSeparator string) string {
+func (b Board) DrawBoard(colSeparator, rowSeparator string) string {
 	s := new(bytes.Buffer)
 
 	s.WriteRune('\n')
-	rows := board.Rows()
+	rows := b.Rows()
 	for _, row := range rows {
 		s.WriteString(strings.Join(row[:], colSeparator))
 		s.WriteString(rowSeparator)
