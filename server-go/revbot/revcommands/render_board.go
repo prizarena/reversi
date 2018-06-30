@@ -17,7 +17,7 @@ import (
 	"github.com/strongo/emoji/go"
 )
 
-func renderPairsBoardMessage(c context.Context, t strongo.SingleLocaleTranslator, tournament pamodels.Tournament, board revmodels.PairsBoard, matchedTile, userID string, players []revmodels.PairsPlayer) (m bots.MessageFromBot, err error) {
+func renderReversiBoardMessage(c context.Context, t strongo.SingleLocaleTranslator, tournament pamodels.Tournament, board revmodels.Board, matchedTile, userID string, players []revmodels.PairsPlayer) (m bots.MessageFromBot, err error) {
 	isCompleted := board.IsCompleted(players)
 	log.Debugf(c, "renderPairsBoardMessage(): isCompleted=%v", isCompleted)
 	lang := t.Locale().Code5
