@@ -101,10 +101,12 @@ func (b Board) Rows(black, white, possibleMove, empty string) (rows [8][8]string
 				for _, validMove := range validMoves {
 					if validMove.x == x && validMove.y == y {
 						rows[y][x] = possibleMove
-						continue
+						break
 					}
 				}
-				rows[y][x] = empty
+				if rows[y][x] == "" {
+					rows[y][x] = empty
+				}
 			}
 		}
 	}
