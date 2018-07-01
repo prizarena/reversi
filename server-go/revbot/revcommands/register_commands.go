@@ -10,7 +10,7 @@ func RegisterPairCommands(router bots.WebhooksRouter) {
 	router.RegisterCommands([]bots.Command{
 		startCommand,
 		inlineQueryCommand,
-		// openCellCommand,
+		placeDiskCommand,
 		newBoardCommand,
 		newPlayCommand,
 	})

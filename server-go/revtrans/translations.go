@@ -53,9 +53,9 @@ var TRANS = map[string]map[string]string{
 		"ru-RU": "Игра: Найди пару",
 	},
 	OnStartWelcome: {
-		"en-US": `🀄 <b>Pair-Matching game</b>
+		"en-US": `🀄 <b>Reversi game</b>
 
-You are given a board with closed tiles. Find matching revs by opening tiles 1 by 1. If you open 2 non matching tiles they get closed. 
+TODO: short rules or a link. 
 
 🤺 You can practice alone or play in race mode against friends. 
 
@@ -63,9 +63,9 @@ You are given a board with closed tiles. Find matching revs by opening tiles 1 b
 
 💵 From time to time there are <b>free to play</b> sponsored tournaments with cash prizes! 
 `,
-		"ru-RU": `🀄 <b>Игра: Найди пару</b>
+		"ru-RU": `🀄 <b>Игра: Реверси</b>
 
-Создаётся поле с закрытыми карточками. Открывая их по одной найдите пары. Если вы открыли 2 несовпадающие карточки то они закрываются.
+TODO: Описать правила кратко или дать ссылку.
 
 🤺 Играть можно одному или на перегонки с друзьями.
 
@@ -73,10 +73,6 @@ You are given a board with closed tiles. Find matching revs by opening tiles 1 b
 
 💵 Иногда проводятся спонсорские турниры с <b>бесплатным участием</b> и денежными призами!
 `,
-	},
-	ChooseSizeOfNextBoard: {
-		"en-US": "Choose size of next board:",
-		"ru-RU": "Выберите размер следующей доски:",
 	},
 	SinglePlayer: {
 		"en-US": "⚔ Single-player",
@@ -106,12 +102,12 @@ You are given a board with closed tiles. Find matching revs by opening tiles 1 b
 		"en-US": `<pre></pre>`,
 	},
 	NewGameText: {
-		"en-US": `🀄 <b>Pair matching game</b>
+		"en-US": `<b>Reversi game</b>
 
-Please choose board size.`,
-		"ru-RU": `🀄 Игра: <b>Найди пары</b>
+Blacks make 1st move.`,
+		"ru-RU": `Игра: <b>Реверси</b>
 
-Выберите размер доски.`,
+Чёрные ходят первыми.`,
 	},
 	MT_HOW_TO_START_NEW_GAME: {
 		"en-US": `<b>To begin new game:</b>
@@ -129,8 +125,8 @@ Please choose board size.`,
 <i>Два первых шага могут быть заменены одним кликом на кнопку ниже!</i>`,
 	},
 	MT_NEW_GAME_WELCOME: {
-		"en-US": `To start the game please choose board size.`,
-		"ru-RU": `Чтобы начать игру выберите размер доски.`,
+		"en-US": `Black makes first move.`,
+		"ru-RU": `Чёрные ходят первыми.`,
 	},
 	MT_HOW_TO_INLINE: {
 		"en-US": `To begin the game and to make first move:

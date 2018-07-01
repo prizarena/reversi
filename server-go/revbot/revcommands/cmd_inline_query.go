@@ -7,8 +7,9 @@ import (
 	"github.com/prizarena/prizarena-public/pabot"
 	"github.com/prizarena/prizarena-public/pamodels"
 	"github.com/strongo/bots-api-telegram"
-				"github.com/prizarena/reversi/server-go/revtrans"
+	"github.com/prizarena/reversi/server-go/revtrans"
 	"github.com/prizarena/reversi/server-go/revsecrets"
+	"github.com/prizarena/reversi/server-go/revgame"
 )
 
 var inlineQueryCommand = bots.NewInlineQueryCommand(
@@ -21,7 +22,7 @@ var inlineQueryCommand = bots.NewInlineQueryCommand(
 		}
 		words := strings.Split(inlineQuery.Text, " ")
 
-		removeLang := func() {
+		removeLang := func() { // TODO: reuse? currently copy-pasted
 			if len(words) == 1 {
 				words = []string{}
 			} else {
@@ -33,7 +34,6 @@ var inlineQueryCommand = bots.NewInlineQueryCommand(
 			whc.SetLocale("ru-RU")
 			removeLang()
 		case "en":
-			words = words[1:]
 			removeLang()
 		}
 
@@ -53,9 +53,8 @@ var inlineQueryCommand = bots.NewInlineQueryCommand(
 // 	return
 // }
 
-
 func inlineQueryPlay(whc bots.WebhookContext, inlineQuery pabot.InlineQueryContext) (m bots.MessageFromBot, err error) {
-	return pabot.ProcessInlineQueryTournament(whc, inlineQuery, revsecrets.PrizarenaGameID, revsecrets.PrizarenaToken,"tournament",
+	return pabot.ProcessInlineQueryTournament(whc, inlineQuery, revsecrets.PrizarenaGameID, revsecrets.PrizarenaToken, "tournament",
 		func(tournament pamodels.Tournament) (m bots.MessageFromBot, err error) {
 			// c := whc.Context()
 
@@ -71,12 +70,12 @@ func inlineQueryPlay(whc bots.WebhookContext, inlineQuery pabot.InlineQueryConte
 					articleID += "&t=" + tournament.ShortTournamentID()
 				}
 
-				var keyboard *tgbotapi.InlineKeyboardMarkup
-				if tournament.ID == "" {
-					keyboard = newNonTournamentBoardSizesKeyboards[lang]
-				} else {
-					keyboard = getNewPlayTgInlineKbMarkup(lang, tournament.ID, 0)
-				}
+				//var keyboard *tgbotapi.InlineKeyboardMarkup
+				//if tournament.ID == "" {
+				//	keyboard = newNonTournamentBoardSizesKeyboards[lang]
+				//} else {
+				//	keyboard = getNewPlayTgInlineKbMarkup(lang, tournament.ID, 0)
+				//}
 				return tgbotapi.InlineQueryResultArticle{
 					ID:          articleID,
 					Type:        "article",
@@ -87,7 +86,7 @@ func inlineQueryPlay(whc bots.WebhookContext, inlineQuery pabot.InlineQueryConte
 						ParseMode:             "HTML",
 						DisableWebPagePreview: m.DisableWebPagePreview,
 					},
-					ReplyMarkup: keyboard,
+					ReplyMarkup: renderReversiTgKeyboard(revgame.OthelloBoard, revgame.Black, "", lang, tournament.ID),
 				}
 			}
 

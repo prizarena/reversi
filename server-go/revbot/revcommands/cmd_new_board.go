@@ -3,13 +3,10 @@ package revcommands
 import (
 	"github.com/strongo/bots-framework/core"
 	"net/url"
-	"fmt"
 	"github.com/prizarena/reversi/server-go/revmodels"
 	"github.com/strongo/bots-framework/platforms/telegram"
 	"github.com/strongo/db"
-	"github.com/prizarena/turn-based"
 	"github.com/strongo/log"
-	"bytes"
 	"strconv"
 	"github.com/prizarena/prizarena-public/pamodels"
 	"strings"
@@ -17,23 +14,6 @@ import (
 )
 
 const newBoardCommandCode = "new"
-
-func getNewBoardCallbackData(width, height, maxUsersLimit int, tournamentID, lang string) string {
-	s := new(bytes.Buffer)
-	fmt.Fprintf(s, "new?s=%v&l=%v", turnbased.NewSize(width, height), lang)
-	if tournamentID != "" {
-		if i := strings.Index(tournamentID, pamodels.TournamentIDSeparator); i >= 0 {
-			tournamentID = tournamentID[i+1:]
-		}
-		fmt.Fprint(s, "&t="+tournamentID)
-	}
-	if maxUsersLimit > 0 {
-		fmt.Fprint(s, "&max="+strconv.Itoa(maxUsersLimit))
-	} else if maxUsersLimit < 0 {
-		panic(fmt.Sprintf("maxUsersLimit < 0: %v", maxUsersLimit))
-	}
-	return s.String()
-}
 
 var newBoardCommand = bots.NewCallbackCommand(
 	newBoardCommandCode,
@@ -135,7 +115,7 @@ var newBoardCommand = bots.NewCallbackCommand(
 		}
 		// TODO: check and notify if another user already selected different board size.
 		tournament := pamodels.Tournament{StringID: db.NewStrID(board.TournamentID)}
-		m, err = renderReversiBoardMessage(c, whc, tournament, board, "", userID, nil)
+		m, err = renderReversiBoardMessage(c, whc, tournament, board, "", userID)
 		return
 	},
 )
