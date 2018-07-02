@@ -16,20 +16,32 @@ import (
 	"github.com/strongo/emoji/go/emoji"
 	"github.com/strongo/app"
 	"fmt"
+	"github.com/prizarena/reversi/server-go/revtrans"
+	"unicode/utf8"
 )
 
 const placeDiskCommandCode = "place"
 
-func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode, address turnbased.CellAddress, lang, tournamentID string) string {
-	var s bytes.Buffer
+func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode, player revgame.Disk, address turnbased.CellAddress, lang, tournamentID string) string {
+	s := new(bytes.Buffer)
 	s.WriteString("place?a=" + string(address))
 	if mode != revgame.MultiPlayer {
 		s.WriteString("&m=" + string(mode))
-		s.WriteString("&c="+strconv.Itoa(board.Turns()))
+		s.WriteString("&c=" + strconv.Itoa(board.Turns()))
+		if mode == revgame.WithAI {
+			switch player {
+			case revgame.Black, revgame.White:
+				s.WriteString("&p=" + string(player))
+			default:
+				panic("mode=WithAI has unexpected player: " + string(player))
+			}
+		}
 	}
 
-	s.WriteString("&b=" + strconv.FormatInt(int64(board.Blacks), 36))
-	s.WriteString("&w=" + strconv.FormatInt(int64(board.Whites), 36))
+	fmt.Fprintf(s, "&b=%v_%v_%v",
+		strconv.FormatInt(int64(board.Blacks), 36),
+		strconv.FormatInt(int64(board.Whites), 36),
+		string(board.Last))
 	if tournamentID != "" {
 		s.WriteString("&t=" + tournamentID)
 	}
@@ -39,33 +51,45 @@ func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode
 	return s.String()
 }
 
+func getPlayerFromString(s string) (player revgame.Disk) {
+	p, _ := utf8.DecodeRuneInString(s)
+	player = revgame.Disk(p)
+	return
+}
+
 var placeDiskCommand = bots.NewCallbackCommand(
 	placeDiskCommandCode,
 	func(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
 		c := whc.Context()
 		q := callbackUrl.Query()
 		mode := revgame.Mode(q.Get("m"))
+		var player revgame.Disk // Needed for AI mode only so we can swap sides each turn
 		switch mode {
-		case revgame.SinglePlayer, revgame.WithAI, revgame.MultiPlayer: // OK
+		case revgame.WithAI:
+			player = getPlayerFromString(q.Get("p"))
+		case revgame.SinglePlayer, revgame.MultiPlayer: // OK
 		case "":
 			mode = revgame.MultiPlayer
 		default:
 			err = fmt.Errorf("unknown mode: [%v]", mode)
-
 		}
 
 		var board revgame.Board
 		var disks int64
 
-		if disks, err = strconv.ParseInt(q.Get("b"), 36, 64); err != nil {
-			return
-		} else {
-			board.Blacks = revgame.Disks(disks)
-		}
-		if disks, err = strconv.ParseInt(q.Get("w"), 36, 64); err != nil {
-			return
-		} else {
-			board.Whites = revgame.Disks(disks)
+		{
+			b := strings.Split(q.Get("b"), "_")
+			if disks, err = strconv.ParseInt(b[0], 36, 64); err != nil {
+				return
+			} else {
+				board.Blacks = revgame.Disks(disks)
+			}
+			if disks, err = strconv.ParseInt(b[1], 36, 64); err != nil {
+				return
+			} else {
+				board.Whites = revgame.Disks(disks)
+			}
+			board.Last = getPlayerFromString(b[2])
 		}
 		ca := turnbased.CellAddress(q.Get("a"))
 		// var currentPlayer, nextPlayer revgame.Disk
@@ -74,7 +98,7 @@ var placeDiskCommand = bots.NewCallbackCommand(
 		currentPlayer := board.NextPlayer()
 		if currentPlayer == revgame.Completed {
 			m.BotMessage = telegram.CallbackAnswer(tgbotapi.AnswerCallbackQueryConfig{
-				Text: "This game has been completed",
+				Text:      "This game has been completed",
 				ShowAlert: true,
 			})
 			return
@@ -134,20 +158,41 @@ var placeDiskCommand = bots.NewCallbackCommand(
 		m.IsEdit = true
 		m.Format = bots.MessageFormatHTML
 		isCompleted := board.IsCompleted()
-		m.Text = renderReversiBoardText(whc, board, isCompleted, mode)
-		m.Keyboard = renderReversiTgKeyboard(board, isCompleted, mode, possibleMove, lang, tournament.ID)
+		m.Text = renderReversiBoardText(whc, board, mode, player, isCompleted, nil)
+		m.Keyboard = renderReversiTgKeyboard(board, mode, player, isCompleted, possibleMove, lang, tournament.ID)
 		return
 	},
 )
 
-func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Board, isCompleted bool, mode revgame.Mode) string {
+func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Board, mode revgame.Mode, player revgame.Disk, isCompleted bool, userNames []string) string {
 	text := new(bytes.Buffer)
-	text.WriteString("<b>Reversi game</b>\n")
+	text.WriteString(fmt.Sprintf("<b>%v</b>\n", t.Translate(revtrans.GameCardTitle)))
 	blacksScore, whitesScore := board.Scores()
 	nextMove := board.NextPlayer()
-	writeScore := func(player revgame.Disk, disk string, score int) {
-		fmt.Fprintf(text, "%v: %v", disk, score)
-		if nextMove == player {
+	writeScore := func(p revgame.Disk, disk string, score int) {
+		switch mode {
+		case revgame.SinglePlayer:
+			fmt.Fprintf(text, "%v: %v", disk, score)
+		case revgame.WithAI:
+			var name string
+			if p == player {
+				name = "me"
+			} else {
+				name = "AI"
+			}
+			fmt.Fprintf(text, "<code>%v (%v):</code> <b>%v</b>", disk, name, score)
+		case revgame.MultiPlayer:
+			switch p {
+			case revgame.Black, revgame.White:
+				fmt.Fprintf(text, "<code>%v (%v):</code> <b>%v</b>", disk, userNames[0], score)
+			default:
+				panic("unknown player: " + string(p))
+			}
+		default:
+			panic("unknown mode: " + string(mode))
+		}
+
+		if nextMove == p {
 			text.WriteString(" ← next move")
 		}
 		text.WriteString("\n")

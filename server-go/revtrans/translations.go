@@ -50,8 +50,8 @@ var TRANS = map[string]map[string]string{
 		"ru-RU": "Создать новую игру",
 	},
 	GameCardTitle: {
-		"en-US": "Pair-Matching game",
-		"ru-RU": "Игра: Найди пару",
+		"en-US": "Reversi game",
+		"ru-RU": "Игра: Реверси",
 	},
 	OnStartWelcome: {
 		"en-US": `🀄 <b>Reversi game</b>

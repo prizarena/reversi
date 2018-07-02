@@ -11,51 +11,55 @@ import (
 )
 
 const (
-	newBoardSinglePlayer = "singleplayer"
-	newBoardWithAI = "ai"
+	newBoardSinglePlayerCommandCode = "singleplayer"
+	newBoardMultiPlayerCommandCode  = "multiplayer"
+	newBoardWithAICommandCode       = "ai"
 )
 
 func newBoardCallbackData(mode revgame.Mode) string {
 	switch mode {
 	case revgame.SinglePlayer:
-		return newBoardSinglePlayer
+		return newBoardSinglePlayerCommandCode
 	case revgame.WithAI:
-		return newBoardWithAI
+		return newBoardWithAICommandCode
 	default:
 		panic("unknown mode: " + string(mode))
 	}
 }
 
 var newBoardSinleplayerCommand = bots.Command{
-	Code:     newBoardSinglePlayer,
+	Code:     newBoardSinglePlayerCommandCode,
 	Commands: []string{"/singleplayer"},
 	Action: func(whc bots.WebhookContext) (m bots.MessageFromBot, err error) {
-		return newPlayAction(whc, "", revgame.SinglePlayer)
+		return newPlayAction(whc, "", revgame.SinglePlayer, revgame.Black)
 	},
 	CallbackAction: func(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
 		tournamentID := callbackUrl.Query().Get("t")
-		return newPlayAction(whc, tournamentID, revgame.SinglePlayer)
+		return newPlayAction(whc, tournamentID, revgame.SinglePlayer, revgame.Black)
 	},
 }
 
 var newBoardWithAICommand = bots.Command{
-	Code:     newBoardWithAI,
+	Code:     newBoardWithAICommandCode,
 	Commands: []string{"/ai"},
 	Action: func(whc bots.WebhookContext) (m bots.MessageFromBot, err error) {
-		return newPlayAction(whc, "", revgame.WithAI)
+		return newPlayAction(whc, "", revgame.WithAI, revgame.Black)
 	},
 	CallbackAction: func(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
 		tournamentID := callbackUrl.Query().Get("t")
-		return newPlayAction(whc, tournamentID, revgame.WithAI)
+		player := getPlayerFromString(callbackUrl.Query().Get("p"))
+		if player != revgame.Black && player != revgame.White {
+			player = revgame.Black
+		}
+		return newPlayAction(whc, tournamentID, revgame.WithAI, player)
 	},
 }
 
-
-func newPlayAction(whc bots.WebhookContext, tournamentID string, mode revgame.Mode) (m bots.MessageFromBot, err error) {
+func newPlayAction(whc bots.WebhookContext, tournamentID string, mode revgame.Mode, player revgame.Disk) (m bots.MessageFromBot, err error) {
 	var tournament pamodels.Tournament
 	m.Text = getNewPlayText(whc, tournament)
 	m.Format = bots.MessageFormatHTML
-	m.Keyboard = renderReversiTgKeyboard(revgame.OthelloBoard, false, mode, "", whc.Locale().Code5, tournamentID)
+	m.Keyboard = renderReversiTgKeyboard(revgame.OthelloBoard, mode, player, false, "", whc.Locale().Code5, tournamentID)
 	return
 }
 
@@ -63,7 +67,6 @@ func newPlayAction(whc bots.WebhookContext, tournamentID string, mode revgame.Mo
 // 	"en-US": renderReversiTgKeyboard(revgame.OthelloBoard, revgame.Black, "", "en-US", ""),
 // 	"ru-RU": renderReversiTgKeyboard(revgame.OthelloBoard, revgame.Black, "", "ru-RU", ""),
 // }
-
 
 func getNewPlayText(t strongo.SingleLocaleTranslator, tournament pamodels.Tournament) string {
 	text := new(bytes.Buffer)

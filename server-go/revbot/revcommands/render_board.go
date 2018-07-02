@@ -10,7 +10,7 @@ import (
 	"github.com/prizarena/reversi/server-go/revgame"
 	"github.com/strongo/emoji/go/emoji"
 	"github.com/prizarena/turn-based"
-	"fmt"
+	"bytes"
 )
 
 func renderReversiBoardMessage(c context.Context, t strongo.SingleLocaleTranslator, tournament pamodels.Tournament, board revmodels.Board, matchedTile, userID string) (m bots.MessageFromBot, err error) {
@@ -106,7 +106,7 @@ func renderReversiBoardMessage(c context.Context, t strongo.SingleLocaleTranslat
 	return
 }
 
-func renderReversiTgKeyboard(board revgame.Board, isCompleted bool, mode revgame.Mode, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
+func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revgame.Disk, isCompleted bool, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
 	// switch nextDisk {
 	// case revgame.Black, revgame.White: // OK
 	// default:
@@ -114,19 +114,25 @@ func renderReversiTgKeyboard(board revgame.Board, isCompleted bool, mode revgame
 	// }
 
 	if isCompleted {
-		var playAgainCallbackData string
+		playAgainCallbackData := new(bytes.Buffer)
 		switch mode {
 		case revgame.SinglePlayer:
-			playAgainCallbackData = newBoardSinglePlayer
+			playAgainCallbackData.WriteString(newBoardSinglePlayerCommandCode + "?")
 		case revgame.WithAI:
-			playAgainCallbackData = newBoardWithAI
-		// case revgame.MultiPlayer:
-		// 	playAgainCallbackData = newBoardM
+			playAgainCallbackData.WriteString(newBoardWithAICommandCode + "?p=" + string(player))
+		case revgame.MultiPlayer:
+			playAgainCallbackData.WriteString(newBoardMultiPlayerCommandCode)
+		}
+		if lang != "" {
+			playAgainCallbackData.WriteString("&l=" + lang)
+		}
+		if tournamentID != "" {
+			playAgainCallbackData.WriteString("&t=" + tournamentID)
 		}
 		kb = &tgbotapi.InlineKeyboardMarkup{
 			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 				{{
-					Text: "Play again", CallbackData: fmt.Sprintf("%v?t=%v&l=%v", playAgainCallbackData, tournamentID, lang),
+					Text: "Play again", CallbackData: playAgainCallbackData.String(),
 				}},
 			},
 		}
@@ -149,7 +155,7 @@ func renderReversiTgKeyboard(board revgame.Board, isCompleted bool, mode revgame
 	}
 	getButton := func(x, y int, cell string) tgbotapi.InlineKeyboardButton {
 		ca := turnbased.NewCellAddress(x, y)
-		callbackData := getPlaceDiskSinglePlayerCallbackData(board, mode, ca, lang, tournamentID)
+		callbackData := getPlaceDiskSinglePlayerCallbackData(board, mode, player, ca, lang, tournamentID)
 		return tgbotapi.NewInlineKeyboardButtonData(cell, callbackData)
 	}
 

@@ -30,6 +30,7 @@ func OtherPlayer(player Disk) Disk {
 type Board struct {
 	Blacks Disks
 	Whites Disks
+	Last Disk
 }
 
 func (b Board) Turns() int {
@@ -78,15 +79,15 @@ func (b Board) flip(a address) (board Board) {
 }
 
 func (b Board) NextPlayer() Disk {
-	switch (bits.OnesCount64(uint64(b.Whites)) + bits.OnesCount64(uint64(b.Blacks))) % 2 {
-	case 0: // Blacks are making 1st move
+	switch b.Last {
+	case White: // Blacks are making 1st move
 		if b.hasValidMoves(Black) {
 			return Black
 		} else if b.hasValidMoves(White) {
 			return White
 		}
 		return Completed
-	case 1:
+	case Black:
 		if b.hasValidMoves(White) {
 			return White
 		} else if b.hasValidMoves(Black) {
@@ -94,7 +95,7 @@ func (b Board) NextPlayer() Disk {
 		}
 		return Completed
 	default:
-		panic("unexpected branch")
+		panic(fmt.Sprintf("unexpected b.Last: [%v]", b.Last))
 	}
 }
 
