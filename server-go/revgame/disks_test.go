@@ -2,6 +2,7 @@ package revgame
 
 import (
 	"testing"
+	"github.com/pkg/errors"
 )
 
 func TestDisks_bit(t *testing.T) {
@@ -22,7 +23,7 @@ func TestPlayerDisks_Add(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		if pd, err = pd.add(testCase.target); err != testCase.expectedErr {
+		if pd, err = pd.add(testCase.target); errors.Cause(err) != testCase.expectedErr {
 			t.Fatalf("case #%v: expected err=%v, got=%v", i+1, testCase.expectedErr, err)
 		}
 	}
@@ -73,7 +74,7 @@ func TestPlayerDisks_Remove(t *testing.T) {
 		case "remove":
 			pd, err = pd.remove(testCase.target)
 		}
-		if err != testCase.expectedErr {
+		if errors.Cause(err) != testCase.expectedErr {
 			t.Fatalf("case #%v: expected err=%v, got=%v", i+1, testCase.expectedErr, err)
 		}
 	}

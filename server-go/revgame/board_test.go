@@ -43,7 +43,7 @@ func TestBoard_MakeMove(t *testing.T) {
 
 	for i, step := range testSteps {
 		var newBoard Board
-		newBoard, err = board.MakeMove(step.player, step.move.x, step.move.y)
+		newBoard, err = board.MakeMove(step.player, step.move.X, step.move.Y)
 		if err != nil {
 			if newBoard != board {
 				t.Fatalf("err != nil && newBoard != board")

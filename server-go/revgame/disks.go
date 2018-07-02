@@ -11,8 +11,8 @@ var ErrNotValidMove = errors.New("not valid move")
 var ErrNotOccupied = errors.New("cell is not occupied")
 
 func (pd Disks) bit(a address) Disks {
-	bit := Disks(1) << (uint(a.y) * 8)
-	bit = bit << uint(a.x)
+	bit := Disks(1) << (uint(a.Y) * 8)
+	bit = bit << uint(a.X)
 	return bit
 }
 

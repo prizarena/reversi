@@ -9,6 +9,7 @@ import (
 			"github.com/strongo/log"
 	"github.com/prizarena/prizarena-public/pabot"
 	"github.com/prizarena/reversi/server-go/revsecrets"
+	"github.com/prizarena/reversi/server-go/revgame"
 )
 
 const startCommandCommandCode = "start"
@@ -77,7 +78,10 @@ func startAction(whc bots.WebhookContext) (m bots.MessageFromBot, err error) {
 			{Text: "English", CallbackData: "start?l=en&cl="+whc.Locale().Code5},
 		},
 		[]tgbotapi.InlineKeyboardButton{
-			{Text: whc.Translate(revtrans.SinglePlayer), CallbackData: newSinleplayerCommandCode},
+			{Text: whc.Translate(revtrans.SinglePlayer), CallbackData: newBoardCallbackData(revgame.SinglePlayer)},
+		},
+		[]tgbotapi.InlineKeyboardButton{
+			{Text: whc.Translate(revtrans.NewPlayWithAI), CallbackData: newBoardCallbackData(revgame.WithAI)},
 		},
 		[]tgbotapi.InlineKeyboardButton{
 			{Text: whc.Translate(revtrans.MultiPlayer), SwitchInlineQuery: &switchInlinePlay},

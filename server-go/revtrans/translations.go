@@ -3,6 +3,7 @@ package revtrans
 import (
 	"github.com/strongo/bots-framework/core"
 	"github.com/prizarena/prizarena-public/patrans"
+	"github.com/strongo/emoji/go/emoji"
 )
 
 func init() {
@@ -75,12 +76,16 @@ TODO: Описать правила кратко или дать ссылку.
 `,
 	},
 	SinglePlayer: {
-		"en-US": "⚔ Single-player",
-		"ru-RU": "⚔ Играть одному",
+		"en-US": emoji.Dagger + " Single-player (practice)",
+		"ru-RU": emoji.Dagger + " Играть одному (тренировка)",
+	},
+	NewPlayWithAI: {
+		"en-US": emoji.RobotFace + " Play against AI",
+		"ru-RU": emoji.RobotFace + " Играть против компьютера",
 	},
 	MultiPlayer: {
-		"en-US": "⚔ Multi-player",
-		"ru-RU": "⚔ Играть с противником",
+		"en-US": emoji.CrossedSwords + " Multi-player",
+		"ru-RU": emoji.CrossedSwords + " Играть с противником",
 	},
 	Board: {
 		"en-US": "Board",

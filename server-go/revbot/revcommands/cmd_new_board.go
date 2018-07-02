@@ -13,10 +13,10 @@ import (
 	"github.com/prizarena/reversi/server-go/revgame"
 )
 
-const newBoardCommandCode = "new"
+const newCommandCode = "new"
 
 var newBoardCommand = bots.NewCallbackCommand(
-	newBoardCommandCode,
+	newCommandCode,
 	func(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
 		c := whc.Context()
 		q := callbackUrl.Query()

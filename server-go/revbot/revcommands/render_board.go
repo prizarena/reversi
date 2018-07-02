@@ -105,12 +105,12 @@ func renderReversiBoardMessage(c context.Context, t strongo.SingleLocaleTranslat
 	return
 }
 
-func renderReversiTgKeyboard(board revgame.Board, nextDisk revgame.Disk, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
-	switch nextDisk {
-	case revgame.Black, revgame.White: // OK
-	default:
-		panic("unexpected nextDisk=" + string(nextDisk))
-	}
+func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
+	// switch nextDisk {
+	// case revgame.Black, revgame.White: // OK
+	// default:
+	// 	panic("unexpected nextDisk=" + string(nextDisk))
+	// }
 
 	rows := board.Rows(emoji.BlackCircle, emoji.WhiteCircle, possibleMove, " ")
 
@@ -127,7 +127,8 @@ func renderReversiTgKeyboard(board revgame.Board, nextDisk revgame.Disk, possibl
 		},
 	}
 	getButton := func(x, y int, cell string) tgbotapi.InlineKeyboardButton {
-		callbackData := getPlaceDiskSinglePlayerCallbackData(board, turnbased.NewCellAddress(x, y), nextDisk, lang, tournamentID)
+		ca := turnbased.NewCellAddress(x, y)
+		callbackData := getPlaceDiskSinglePlayerCallbackData(board, mode, ca, lang, tournamentID)
 		return tgbotapi.NewInlineKeyboardButtonData(cell, callbackData)
 	}
 

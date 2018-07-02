@@ -31,6 +31,10 @@ type Board struct {
 	Whites Disks
 }
 
+func (b Board) Turns() int {
+	return bits.OnesCount64(uint64(b.Blacks)) + bits.OnesCount64(uint64(b.Whites)) - 4
+}
+
 var OthelloBoard = Board{
 	Whites: (1 << (3*8 + 3)) | (1 << (4*8 + 4)),
 	Blacks: (1 << (3*8 + 4)) | (1 << (4*8 + 3)),
@@ -72,7 +76,7 @@ func (b Board) flip(a address) (board Board) {
 	return
 }
 
-func (b Board) NextMove() Disk {
+func (b Board) NextPlayer() Disk {
 	switch (bits.OnesCount64(uint64(b.Whites)) + bits.OnesCount64(uint64(b.Blacks))) % 2 {
 	case 0: // Blacks are making 1st move
 		return Black
@@ -99,7 +103,7 @@ func (b Board) Rows(black, white, possibleMove, empty string) (rows [8][8]string
 				rows[y][x] = black
 			} else {
 				for _, validMove := range validMoves {
-					if validMove.x == x && validMove.y == y {
+					if validMove.X == x && validMove.Y == y {
 						rows[y][x] = possibleMove
 						break
 					}
@@ -132,15 +136,15 @@ func (b Board) DrawBoard(black, white, possibleMove string, colSeparator, rowSep
 }
 
 type address struct {
-	x, y int
+	X, Y int
 }
 
 func (a address) String() string {
-	return fmt.Sprintf("{x: %v, y: %v}", a.x, a.y)
+	return fmt.Sprintf("{x: %v, y: %v}", a.X, a.Y)
 }
 
 func isOnBoard(a address) bool {
-	return a.x >= 0 && a.x <= 7 && a.y >= 0 && a.y <= 7
+	return a.X >= 0 && a.X <= 7 && a.Y >= 0 && a.Y <= 7
 }
 
 func (b Board) disk(a address) Disk {
@@ -212,18 +216,18 @@ func (b Board) getDisksToFlip(start address, player Disk) (disksToFlip []address
 		{0, 1}, {1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1},
 	} {
 		a := start
-		a.x += direction.x // first step in the direction
-		a.y += direction.y // first step in the direction
+		a.X += direction.x // first step in the direction
+		a.Y += direction.y // first step in the direction
 		if isOnBoard(a) && board.disk(a) == otherDisk { // There is a piece belonging to the other player next to our piece.
-			a.x += direction.x
-			a.y += direction.y
+			a.X += direction.x
+			a.Y += direction.y
 			if !isOnBoard(a) {
 				continue
 			}
 
 			for board.disk(a) == otherDisk {
-				a.x += direction.x
-				a.y += direction.y
+				a.X += direction.x
+				a.Y += direction.y
 				if !isOnBoard(a) {
 					break
 				}
@@ -236,8 +240,8 @@ func (b Board) getDisksToFlip(start address, player Disk) (disksToFlip []address
 			if board.disk(a) == player {
 				// There are disks to flip over. Go in the reverse direction until we reach the original space, noting all the tiles along the way.
 				for {
-					a.x -= direction.x
-					a.y -= direction.y
+					a.X -= direction.x
+					a.Y -= direction.y
 					if a == start {
 						break
 					}
@@ -262,7 +266,7 @@ func (b Board) freeCellsCount() int {
 
 func (b Board) getValidMoves() (validMoves []address) {
 	//  Returns a list of [x,y] lists of valid moves for the given player on the given board.
-	disk := b.NextMove()
+	disk := b.NextPlayer()
 	validMoves = make([]address, 0, b.freeCellsCount())
 	for x := 0; x < 8; x++ {
 		for y := 0; y < 8; y++ {
@@ -275,6 +279,17 @@ func (b Board) getValidMoves() (validMoves []address) {
 	return
 }
 
-func (b Board) Score() (black, white int) {
+func (b Board) Scores() (black, white int) {
 	return bits.OnesCount64(uint64(b.Blacks)), bits.OnesCount64(uint64(b.Whites))
+}
+
+func (b Board) Score(player Disk) int {
+	switch player {
+	case Black:
+		return bits.OnesCount64(uint64(b.Blacks))
+	case White:
+		return bits.OnesCount64(uint64(b.Whites))
+	default:
+		panic(fmt.Sprintf("unknown player: %v", player))
+	}
 }
