@@ -14,6 +14,8 @@ import (
 	"strings"
 	"github.com/strongo/log"
 	"github.com/strongo/emoji/go/emoji"
+	"github.com/strongo/app"
+	"fmt"
 )
 
 const placeDiskCommandCode = "place"
@@ -51,14 +53,14 @@ var placeDiskCommand = bots.NewCallbackCommand(
 			board.Whites = revgame.Disks(disks)
 		}
 		ca := turnbased.CellAddress(q.Get("ca"))
-		var currentDisk revgame.Disk
+		var currentPlayer, nextPlayer revgame.Disk
 		x, y := ca.XY()
 
 		switch q.Get("d") {
 		case "w":
-			currentDisk = revgame.White
+			currentPlayer = revgame.White
 		case "b":
-			currentDisk = revgame.Black
+			currentPlayer = revgame.Black
 		default:
 			err = errors.New("unknown disk: " + q.Get("d"))
 		}
@@ -66,7 +68,7 @@ var placeDiskCommand = bots.NewCallbackCommand(
 		possibleMove := ""
 
 		// -- Start[ Make move ]--
-		if board, err = board.MakeMove(currentDisk, x, y); err != nil {
+		if board, err = board.MakeMove(currentPlayer, x, y); err != nil {
 			if cause := errors.Cause(err); cause == revgame.ErrNotValidMove || cause == revgame.ErrAlreadyOccupied {
 				log.Debugf(c, "Wrong move: %v", cause)
 				m.BotMessage = telegram.CallbackAnswer(tgbotapi.AnswerCallbackQueryConfig{
@@ -83,6 +85,9 @@ var placeDiskCommand = bots.NewCallbackCommand(
 			} else {
 				return
 			}
+			nextPlayer = currentPlayer
+		} else {
+			nextPlayer = revgame.OtherPlayer(currentPlayer)
 		}
 		//-- End[ Make move ]--
 
@@ -96,9 +101,25 @@ var placeDiskCommand = bots.NewCallbackCommand(
 		}
 		m.IsEdit = true
 		m.Format = bots.MessageFormatHTML
-		m.Text = "<b>Reversi game</b>"
-		nextDisk := revgame.OtherPlayer(currentDisk)
-		m.Keyboard = renderReversiTgKeyboard(board, nextDisk, possibleMove, lang, tournament.ID)
+		m.Text = renderReversiBoardText(whc, board)
+		m.Keyboard = renderReversiTgKeyboard(board, nextPlayer, possibleMove, lang, tournament.ID)
 		return
 	},
 )
+
+func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Board) string {
+	text := new(bytes.Buffer)
+	text.WriteString("<b>Reversi game</b>\n")
+	blacksScore, whitesScore := board.Score()
+	nextMove := board.NextMove()
+	writeScore := func(player revgame.Disk, disk string, score int) {
+		fmt.Fprintf(text, "%v: %v", disk, score)
+		if nextMove == player {
+			text.WriteString(" ← next move")
+		}
+		text.WriteString("\n")
+	}
+	writeScore(revgame.Black, emoji.BlackCircle, blacksScore)
+	writeScore(revgame.White, emoji.WhiteCircle, whitesScore)
+	return text.String()
+}
