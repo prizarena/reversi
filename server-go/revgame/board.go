@@ -11,9 +11,10 @@ import (
 type Disk rune
 
 var (
-	Black Disk = 'b'
-	White Disk = 'w'
-	Empty Disk = ' '
+	Black     Disk = 'b'
+	White     Disk = 'w'
+	Empty     Disk = ' '
+	Completed Disk = '!'
 )
 
 func OtherPlayer(player Disk) Disk {
@@ -79,9 +80,19 @@ func (b Board) flip(a address) (board Board) {
 func (b Board) NextPlayer() Disk {
 	switch (bits.OnesCount64(uint64(b.Whites)) + bits.OnesCount64(uint64(b.Blacks))) % 2 {
 	case 0: // Blacks are making 1st move
-		return Black
+		if b.hasValidMoves(Black) {
+			return Black
+		} else if b.hasValidMoves(White) {
+			return White
+		}
+		return Completed
 	case 1:
-		return White
+		if b.hasValidMoves(White) {
+			return White
+		} else if b.hasValidMoves(Black) {
+			return Black
+		}
+		return Completed
 	default:
 		panic("unexpected branch")
 	}
@@ -91,7 +102,8 @@ func (b Board) Rows(black, white, possibleMove, empty string) (rows [8][8]string
 	// rows = make([][]string, 8)
 	var validMoves []address
 	if possibleMove != "" {
-		validMoves = b.getValidMoves()
+		player := b.NextPlayer()
+		validMoves = b.getValidMoves(player)
 	}
 
 	for y := 0; y < 8; y++ {
@@ -124,11 +136,11 @@ func (b Board) DrawBoard(black, white, possibleMove string, colSeparator, rowSep
 	rows := b.Rows(black, white, possibleMove, " ")
 	s.WriteRune(' ')
 	for x := 0; x < 8; x++ {
-		s.WriteRune('A'+rune(x))
+		s.WriteRune('A' + rune(x))
 	}
 	s.WriteRune('\n')
 	for y, row := range rows {
-		s.WriteRune('1'+rune(y))
+		s.WriteRune('1' + rune(y))
 		s.WriteString(strings.Join(row[:], colSeparator))
 		s.WriteString(rowSeparator)
 	}
@@ -210,6 +222,8 @@ func (b Board) getDisksToFlip(start address, player Disk) (disksToFlip []address
 
 	otherDisk := OtherPlayer(player)
 
+	disksToFlip = make([]address, 0, 5*3+4) // Theoretical maximum we can flip with 1 move
+
 	for _, direction := range []struct {
 		x, y int
 	}{
@@ -264,19 +278,42 @@ func (b Board) freeCellsCount() int {
 	return 64 - bits.OnesCount64(uint64(b.Blacks)) - bits.OnesCount64(uint64(b.Whites))
 }
 
-func (b Board) getValidMoves() (validMoves []address) {
+func (b Board) getValidMoves(player Disk) (validMoves []address) {
 	//  Returns a list of [x,y] lists of valid moves for the given player on the given board.
-	disk := b.NextPlayer()
 	validMoves = make([]address, 0, b.freeCellsCount())
 	for x := 0; x < 8; x++ {
 		for y := 0; y < 8; y++ {
-			disksToFlip, err := b.getDisksToFlip(address{x, y}, disk)
+			disksToFlip, err := b.getDisksToFlip(address{x, y}, player)
 			if err == nil && len(disksToFlip) > 0 {
 				validMoves = append(validMoves, address{x, y})
 			}
 		}
 	}
 	return
+}
+
+func (b Board) hasValidMoves(player Disk) bool {
+	for x := 0; x < 8; x++ {
+		for y := 0; y < 8; y++ {
+			disksToFlip, err := b.getDisksToFlip(address{x, y}, player) // TODO: no need slice of disksToFlip
+			if err == nil && len(disksToFlip) > 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (b Board) IsCompleted() bool {
+	player := b.NextPlayer()
+	if b.hasValidMoves(player) {
+		return false
+	}
+	player = OtherPlayer(player)
+	if b.hasValidMoves(player) {
+		return false
+	}
+	return true
 }
 
 func (b Board) Scores() (black, white int) {

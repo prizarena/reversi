@@ -15,7 +15,7 @@ type SimpleAI struct {
 var rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func (SimpleAI) GetMove(board Board, player Disk) (move address) {
-	validMoves := board.getValidMoves()
+	validMoves := board.getValidMoves(player)
 	// if len(validMoves) == 0 {
 	// 	return
 	// }
@@ -35,6 +35,7 @@ func (SimpleAI) GetMove(board Board, player Disk) (move address) {
 			if score == bestScore {
 				bestMoves = append(bestMoves, m)
 			} else if score > bestScore {
+				bestScore = score
 				bestMoves = bestMoves[0:1]
 				bestMoves[0] = m
 			}

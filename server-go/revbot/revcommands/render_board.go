@@ -10,6 +10,7 @@ import (
 	"github.com/prizarena/reversi/server-go/revgame"
 	"github.com/strongo/emoji/go/emoji"
 	"github.com/prizarena/turn-based"
+	"fmt"
 )
 
 func renderReversiBoardMessage(c context.Context, t strongo.SingleLocaleTranslator, tournament pamodels.Tournament, board revmodels.Board, matchedTile, userID string) (m bots.MessageFromBot, err error) {
@@ -105,12 +106,32 @@ func renderReversiBoardMessage(c context.Context, t strongo.SingleLocaleTranslat
 	return
 }
 
-func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
+func renderReversiTgKeyboard(board revgame.Board, isCompleted bool, mode revgame.Mode, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
 	// switch nextDisk {
 	// case revgame.Black, revgame.White: // OK
 	// default:
 	// 	panic("unexpected nextDisk=" + string(nextDisk))
 	// }
+
+	if isCompleted {
+		var playAgainCallbackData string
+		switch mode {
+		case revgame.SinglePlayer:
+			playAgainCallbackData = newBoardSinglePlayer
+		case revgame.WithAI:
+			playAgainCallbackData = newBoardWithAI
+		// case revgame.MultiPlayer:
+		// 	playAgainCallbackData = newBoardM
+		}
+		kb = &tgbotapi.InlineKeyboardMarkup{
+			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
+				{{
+					Text: "Play again", CallbackData: fmt.Sprintf("%v?t=%v&l=%v", playAgainCallbackData, tournamentID, lang),
+				}},
+			},
+		}
+		return
+	}
 
 	rows := board.Rows(emoji.BlackCircle, emoji.WhiteCircle, possibleMove, " ")
 

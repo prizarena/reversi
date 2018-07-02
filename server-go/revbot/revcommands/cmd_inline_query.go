@@ -86,7 +86,7 @@ func inlineQueryPlay(whc bots.WebhookContext, inlineQuery pabot.InlineQueryConte
 						ParseMode:             "HTML",
 						DisableWebPagePreview: m.DisableWebPagePreview,
 					},
-					ReplyMarkup: renderReversiTgKeyboard(revgame.OthelloBoard, revgame.MultiPlayer, "", lang, tournament.ID),
+					ReplyMarkup: renderReversiTgKeyboard(revgame.OthelloBoard, false, revgame.MultiPlayer, "", lang, tournament.ID),
 				}
 			}
 

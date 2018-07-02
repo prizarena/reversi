@@ -72,6 +72,13 @@ var placeDiskCommand = bots.NewCallbackCommand(
 		x, y := ca.XY()
 
 		currentPlayer := board.NextPlayer()
+		if currentPlayer == revgame.Completed {
+			m.BotMessage = telegram.CallbackAnswer(tgbotapi.AnswerCallbackQueryConfig{
+				Text: "This game has been completed",
+				ShowAlert: true,
+			})
+			return
+		}
 
 		// if
 		// switch q.Get("d") {
@@ -126,13 +133,14 @@ var placeDiskCommand = bots.NewCallbackCommand(
 		}
 		m.IsEdit = true
 		m.Format = bots.MessageFormatHTML
-		m.Text = renderReversiBoardText(whc, board, mode)
-		m.Keyboard = renderReversiTgKeyboard(board, mode, possibleMove, lang, tournament.ID)
+		isCompleted := board.IsCompleted()
+		m.Text = renderReversiBoardText(whc, board, isCompleted, mode)
+		m.Keyboard = renderReversiTgKeyboard(board, isCompleted, mode, possibleMove, lang, tournament.ID)
 		return
 	},
 )
 
-func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Board, mode revgame.Mode) string {
+func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Board, isCompleted bool, mode revgame.Mode) string {
 	text := new(bytes.Buffer)
 	text.WriteString("<b>Reversi game</b>\n")
 	blacksScore, whitesScore := board.Scores()
@@ -146,5 +154,8 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Boar
 	}
 	writeScore(revgame.Black, emoji.BlackCircle, blacksScore)
 	writeScore(revgame.White, emoji.WhiteCircle, whitesScore)
+	if isCompleted {
+		text.WriteString("Game is completed!\n")
+	}
 	return text.String()
 }
