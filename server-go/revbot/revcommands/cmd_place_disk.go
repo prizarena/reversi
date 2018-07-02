@@ -117,7 +117,7 @@ var placeDiskCommand = bots.NewCallbackCommand(
 		possibleMove := ""
 
 		// -- Start[ Make move ]--
-		if mode == revgame.WithAI && currentPlayer == revgame.White {
+		if mode == revgame.WithAI && player != currentPlayer {
 			move := revgame.SimpleAI{}.GetMove(board, currentPlayer)
 			board, err = board.MakeMove(currentPlayer, move.X, move.Y)
 		} else {

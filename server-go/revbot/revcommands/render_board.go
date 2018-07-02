@@ -143,6 +143,13 @@ func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revg
 
 	kb = &tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
+			{
+				//{Text: emoji.FastReverseButton + " To start", CallbackData: "back?to=start"},
+				{Text: emoji.ReverseButton + " -1 step", CallbackData: "replay?to=back"},
+				{Text: emoji.Megaphone + " Share", CallbackData: "replay?to=back"},
+				{Text: emoji.PlayButton + " +1 step", CallbackData: "replay?to=forward"},
+				//{Text: emoji.FastforwardButton, CallbackData: "replay?to=end"},
+			},
 			make([]tgbotapi.InlineKeyboardButton, 8),
 			make([]tgbotapi.InlineKeyboardButton, 8),
 			make([]tgbotapi.InlineKeyboardButton, 8),
@@ -161,7 +168,7 @@ func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revg
 
 	for y, row := range rows {
 		for x, cell := range row {
-			kb.InlineKeyboard[y][x] = getButton(x, y, cell)
+			kb.InlineKeyboard[y+1][x] = getButton(x, y, cell)
 		}
 	}
 	return

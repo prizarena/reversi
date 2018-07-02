@@ -38,6 +38,7 @@ func (b Board) Turns() int {
 }
 
 var OthelloBoard = Board{
+	Last: White,
 	Whites: (1 << (3*8 + 3)) | (1 << (4*8 + 4)),
 	Blacks: (1 << (3*8 + 4)) | (1 << (4*8 + 3)),
 }
@@ -197,7 +198,7 @@ func (b Board) MakeMove(player Disk, x, y int) (board Board, err error) {
 	for _, diskToFlip := range disksToFlip {
 		board = board.flip(diskToFlip)
 	}
-
+	board.Last = player
 	return
 }
 
@@ -306,15 +307,7 @@ func (b Board) hasValidMoves(player Disk) bool {
 }
 
 func (b Board) IsCompleted() bool {
-	player := b.NextPlayer()
-	if b.hasValidMoves(player) {
-		return false
-	}
-	player = OtherPlayer(player)
-	if b.hasValidMoves(player) {
-		return false
-	}
-	return true
+	return b.NextPlayer() == Completed
 }
 
 func (b Board) Scores() (black, white int) {
