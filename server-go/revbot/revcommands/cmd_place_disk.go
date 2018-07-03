@@ -27,7 +27,9 @@ func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode
 	s.WriteString("place?a=" + string(address))
 	if mode != revgame.MultiPlayer {
 		s.WriteString("&m=" + string(mode))
-		s.WriteString("&c=" + strconv.Itoa(board.Turns()))
+		if turns := board.Turns(); turns > 0 {
+			s.WriteString("&c=" + strconv.Itoa(turns))
+		}
 		if mode == revgame.WithAI {
 			switch player {
 			case revgame.Black, revgame.White:
@@ -45,7 +47,7 @@ func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode
 	if tournamentID != "" {
 		s.WriteString("&t=" + tournamentID)
 	}
-	if lang != "" {
+	if mode == revgame.MultiPlayer && lang != "" {
 		s.WriteString("&l=" + lang)
 	}
 	if mode != revgame.MultiPlayer && len(lastMoves) != 0 {
@@ -127,7 +129,13 @@ func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.B
 			var lastMove revgame.Move
 			lastMove, lastMoves = lastMoves.Pop()
 			a := lastMove.Address()
-			board = board.UndoMove(a, lastMoves.LastMove().Address())
+			var prevMove revgame.Address
+			if len(lastMoves) == 0 {
+				prevMove = revgame.EmptyAddress
+			} else {
+				prevMove = lastMoves.LastMove().Address()
+			}
+			board = board.UndoMove(a, prevMove)
 		}
 	} else if replay > 0 {
 		//
@@ -154,8 +162,8 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgam
 
 	// -- Start[ Make move ]--
 	if mode == revgame.WithAI && player != currentPlayer {
-		move := revgame.SimpleAI{}.GetMove(board, currentPlayer)
-		board, err = board.MakeMove(currentPlayer, move)
+		a = revgame.SimpleAI{}.GetMove(board, currentPlayer)
+		board, err = board.MakeMove(currentPlayer, a)
 	} else {
 		board, err = board.MakeMove(currentPlayer, a)
 	}
@@ -182,6 +190,7 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgam
 	} else {
 		// nextPlayer = revgame.OtherPlayer(currentPlayer)
 	}
+
 
 	var lastMoves revgame.Transcript
 	if mode != revgame.MultiPlayer {

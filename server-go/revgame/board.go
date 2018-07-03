@@ -49,7 +49,7 @@ var OthelloBoard = Board{
 	Blacks: (1 << (3*8 + 4)) | (1 << (4*8 + 3)),
 }
 
-func (b Board) flip(a address) (board Board) {
+func (b Board) flip(a Address) (board Board) {
 	if b.Whites&b.Blacks != 0 {
 		panic("b.White&b.Black != 0")
 	}
@@ -117,7 +117,7 @@ func (b Board) NextPlayer() Disk {
 
 func (b Board) Rows(black, white, possibleMove, empty string) (rows [8][8]string) {
 	// rows = make([][]string, 8)
-	var validMoves []address
+	var validMoves []Address
 	if possibleMove != "" {
 		player := b.NextPlayer()
 		validMoves = b.getValidMoves(player)
@@ -164,35 +164,35 @@ func (b Board) DrawBoard(black, white, possibleMove string, colSeparator, rowSep
 	return s.String()
 }
 
-type address struct {
+type Address struct {
 	X, Y int8
 }
 
-func (a address) Index() int8 {
+func (a Address) Index() int8 {
 	return a.Y*BoardSize + a.X
 }
 
-var EmptyAddress = address{-127, -127}
+var EmptyAddress = Address{-127, -127}
 
-func (a address) IsOnBoard() bool {
+func (a Address) IsOnBoard() bool {
 	return a.X >= 0 && a.X < BoardCellsCount && a.Y >= 0 && a.Y < BoardCellsCount
 }
 
-func (a address) move(d direction) address {
+func (a Address) move(d direction) Address {
 	a.X += d.x
 	a.Y += d.y
 	return a
 }
 
-func (a address) String() string {
+func (a Address) String() string {
 	return fmt.Sprintf("{x: %v, y: %v}", a.X, a.Y)
 }
 
-func isOnBoard(a address) bool {
+func isOnBoard(a Address) bool {
 	return a.X >= 0 && a.X <= 7 && a.Y >= 0 && a.Y <= 7
 }
 
-func (b Board) disk(a address) Disk {
+func (b Board) disk(a Address) Disk {
 	if b.Whites.isPlaced(a) {
 		return White
 	} else if b.Blacks.isPlaced(a) {
@@ -201,7 +201,7 @@ func (b Board) disk(a address) Disk {
 	return Empty
 }
 
-func (b Board) UndoMove(a, prevMove address) (board Board) {
+func (b Board) UndoMove(a, prevMove Address) (board Board) {
 	board = b
 	switch b.disk(a) {
 	case Black:
@@ -216,7 +216,7 @@ func (b Board) UndoMove(a, prevMove address) (board Board) {
 	return
 }
 
-func (b Board) undoMove(disk address, removing, adding Disks) (Disks, Disks) {
+func (b Board) undoMove(disk Address, removing, adding Disks) (Disks, Disks) {
 	removing = removing.remove(disk)
 
 	for _, direction := range directions {
@@ -237,8 +237,8 @@ func (b Board) undoMove(disk address, removing, adding Disks) (Disks, Disks) {
 	return removing, adding
 }
 
-func (b Board) MakeMove(player Disk, a address) (board Board, err error) {
-	var disksToFlip []address
+func (b Board) MakeMove(player Disk, a Address) (board Board, err error) {
+	var disksToFlip []Address
 	board = b
 
 	if disksToFlip, err = b.getDisksToFlip(a, player); err != nil {
@@ -276,7 +276,7 @@ var directions = []direction{
 	{0, 1}, {1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1},
 }
 
-func (b Board) getDisksToFlip(start address, player Disk) (disksToFlip []address, err error) {
+func (b Board) getDisksToFlip(start Address, player Disk) (disksToFlip []Address, err error) {
 	if !isOnBoard(start) {
 		panic(fmt.Sprintf("address is outside of board: %v", start))
 	}
@@ -298,7 +298,7 @@ func (b Board) getDisksToFlip(start address, player Disk) (disksToFlip []address
 
 	otherDisk := OtherPlayer(player)
 
-	disksToFlip = make([]address, 0, 5*3+4) // Theoretical maximum we can flip with 1 move
+	disksToFlip = make([]Address, 0, 5*3+4) // Theoretical maximum we can flip with 1 move
 
 	for _, direction := range directions {
 		a := start
@@ -350,14 +350,14 @@ func (b Board) freeCellsCount() int {
 	return 64 - bits.OnesCount64(uint64(b.Blacks)) - bits.OnesCount64(uint64(b.Whites))
 }
 
-func (b Board) getValidMoves(player Disk) (validMoves []address) {
+func (b Board) getValidMoves(player Disk) (validMoves []Address) {
 	//  Returns a list of [x,y] lists of valid moves for the given player on the given board.
-	validMoves = make([]address, 0, b.freeCellsCount())
+	validMoves = make([]Address, 0, b.freeCellsCount())
 	for x := int8(0); x < 8; x++ {
 		for y := int8(0); y < 8; y++ {
-			disksToFlip, err := b.getDisksToFlip(address{x, y}, player)
+			disksToFlip, err := b.getDisksToFlip(Address{x, y}, player)
 			if err == nil && len(disksToFlip) > 0 {
-				validMoves = append(validMoves, address{x, y})
+				validMoves = append(validMoves, Address{x, y})
 			}
 		}
 	}
@@ -367,7 +367,7 @@ func (b Board) getValidMoves(player Disk) (validMoves []address) {
 func (b Board) hasValidMoves(player Disk) bool {
 	for x := int8(0); x < 8; x++ {
 		for y := int8(0); y < 8; y++ {
-			disksToFlip, err := b.getDisksToFlip(address{x, y}, player) // TODO: no need slice of disksToFlip
+			disksToFlip, err := b.getDisksToFlip(Address{x, y}, player) // TODO: no need slice of disksToFlip
 			if err == nil && len(disksToFlip) > 0 {
 				return true
 			}
@@ -395,10 +395,10 @@ func (b Board) Score(player Disk) int {
 	}
 }
 
-func CellAddressToRevAddress(ca turnbased.CellAddress) address {
+func CellAddressToRevAddress(ca turnbased.CellAddress) Address {
 	if ca == "" {
 		return EmptyAddress
 	}
 	x, y := ca.XY()
-	return address{X: int8(x), Y: int8(y)}
+	return Address{X: int8(x), Y: int8(y)}
 }

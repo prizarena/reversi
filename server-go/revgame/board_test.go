@@ -15,26 +15,26 @@ func TestBoard_DrawBoard(t *testing.T) {
 func TestBoard_MakeMove(t *testing.T) {
 	testSteps := []struct {
 		player Disk
-		move   address
+		move   Address
 		err    error
 		cause  error
 	}{
 		{
 			player: Black,
-			move:   address{1, 1},
+			move:   Address{1, 1},
 			cause:  ErrNotValidMove,
 		},
 		{
 			player: Black,
-			move:   address{3, 2},
+			move:   Address{3, 2},
 		},
 		{
 			player: White,
-			move:   address{2, 4},
+			move:   Address{2, 4},
 		},
 		{
 			player: Black,
-			move:   address{2, 5},
+			move:   Address{2, 5},
 		},
 	}
 

@@ -2,7 +2,7 @@ package revgame
 
 import (
 	"github.com/pkg/errors"
-	"encoding/base64"
+	"strings"
 )
 
 type Transcript []byte
@@ -13,24 +13,25 @@ func EmptyTranscript() Transcript{
 	return Transcript([]byte{})
 }
 
+const encodeURL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
 func NewTranscript(s string) (transcript Transcript) {
 	if len(s) == 0 {
 		return
 	}
-	var (
-		v   []byte
-		err error
-	)
-	if v, err = base64.RawURLEncoding.DecodeString(s); err != nil {
-		panic(ErrNotValidTranscript)
-		return
+	transcript = make(Transcript, len(s))
+	for i, v := range []byte(s) {
+		transcript[i] = byte(strings.Index(encodeURL, string(v)))
 	}
-	transcript = Transcript(v)
 	return
 }
 
 func (t Transcript) ToBase64() string {
-	return base64.RawURLEncoding.EncodeToString([]byte(t))
+	v := make([]byte, len(t))
+	for i, a := range t {
+		v[i] = encodeURL[a]
+	}
+	return string(v)
 }
 
 func (t Transcript) Pop() (Move, Transcript) {
@@ -46,7 +47,7 @@ func (t Transcript) LastMove() Move {
 
 type Move byte
 
-func (m Move) Address() address {
+func (m Move) Address() Address {
 	i := int8(m)
-	return address{i % BoardSize, i / BoardSize}
+	return Address{i % BoardSize, i / BoardSize}
 }

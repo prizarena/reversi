@@ -1,17 +1,26 @@
 package revgame
 
-import "testing"
+import (
+	"testing"
+	"github.com/prizarena/turn-based"
+)
 
-func TestTranscript_String(t *testing.T) {
-	// transcript := transcript{
-	// 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-	// 	10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-	// 	10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-	// 	10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-	// 	10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-	// 	10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-	// 	60, 61, 62, 63,
-	// }
-	// s := transcript.String()
-	// t.Log(len(s), s)
+func TestTranscript_ToBase64(t *testing.T) {
+	transcript := NewTranscript("")
+	if s := transcript.ToBase64(); s != "" {
+		t.Error("Expected empty string, got: " + s)
+	}
+
+	for i, step := range []struct {
+		ca turnbased.CellAddress
+		expects string
+	}{
+		{ca: "B1", expects: "B"},
+		{ca: "C2", expects: "BK"},
+	}{
+		transcript = append(transcript, byte(CellAddressToRevAddress(step.ca).Index()))
+		if s := transcript.ToBase64(); s != step.expects {
+			t.Fatalf("step #%v: expected [%v], got: [%v]", i+1, step.expects, s)
+		}
+	}
 }

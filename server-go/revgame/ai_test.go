@@ -4,9 +4,9 @@ import "testing"
 
 func TestSimpleAI_GetMove(t *testing.T) {
 	board := OthelloBoard
-	board.Blacks, _ = board.Blacks.add(address{3, 5})
-	board.Blacks, _ = board.Blacks.add(address{3, 6})
-	board.Blacks, _ = board.Blacks.add(address{2, 4})
+	board.Blacks, _ = board.Blacks.add(Address{3, 5})
+	board.Blacks, _ = board.Blacks.add(Address{3, 6})
+	board.Blacks, _ = board.Blacks.add(Address{2, 4})
 	//
 	move := SimpleAI{}.GetMove(board, White)
 	if move.X != 3 || move.Y != 7 {

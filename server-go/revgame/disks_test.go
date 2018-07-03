@@ -14,12 +14,12 @@ func TestPlayerDisks_Add(t *testing.T) {
 	var err error
 
 	testCases := []struct {
-		target      address
+		target      Address
 		expectedErr error
 		// expetectState PlayerDisks
 	}{
-		{address{0, 0}, nil},
-		{address{0, 0}, ErrAlreadyOccupied},
+		{Address{0, 0}, nil},
+		{Address{0, 0}, ErrAlreadyOccupied},
 	}
 
 	for i, testCase := range testCases {
@@ -32,7 +32,7 @@ func TestPlayerDisks_Add(t *testing.T) {
 func TestPlayerDisks_Add_All(t *testing.T) {
 	for x := int8(0); x < 8; x++ {
 		for y := int8(0); y < 8; y++ {
-			a := address{x, y}
+			a := Address{x, y}
 			var disks Disks
 			var err error
 			disks, err = disks.add(a)
@@ -57,14 +57,14 @@ func TestPlayerDisks_Remove(t *testing.T) {
 
 	testCases := []struct {
 		do          string
-		target      address
+		target      Address
 		expectedErr error
 		// expetectState PlayerDisks
 	}{
-		{"add", address{0, 0}, nil},
-		{"add", address{0, 0}, ErrAlreadyOccupied},
-		{"remove", address{0, 0}, nil},
-		{"add", address{0, 0}, nil},
+		{"add", Address{0, 0}, nil},
+		{"add", Address{0, 0}, ErrAlreadyOccupied},
+		{"remove", Address{0, 0}, nil},
+		{"add", Address{0, 0}, nil},
 	}
 
 	for i, testCase := range testCases {
