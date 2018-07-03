@@ -48,14 +48,13 @@ func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode
 	if lang != "" {
 		s.WriteString("&l=" + lang)
 	}
-	if mode != revgame.MultiPlayer && lastMoves != "" {
+	if mode != revgame.MultiPlayer && len(lastMoves) != 0 {
 		const limit = 64
 		left := limit - s.Len()
 		if len(lastMoves) > left {
-			canFit := (left / 2) * 2
-			lastMoves = lastMoves[len(lastMoves)-canFit:]
+			lastMoves = lastMoves[len(lastMoves)-left:]
 		}
-		s.WriteString("&h=" + string(lastMoves))
+		s.WriteString("&h=" + lastMoves.ToBase64())
 	}
 	return s.String()
 }
@@ -116,10 +115,9 @@ func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.B
 	if replay, err = strconv.Atoi(q.Get("a")); err != nil {
 		return
 	}
-	var transcript revgame.Transcript
-	if transcript, err = revgame.NewTranscript(q.Get("h")); err != nil {
-		return
-	}
+
+	transcript := revgame.NewTranscript(q.Get("h"))
+
 	if replay == 0 {
 		err = errors.New("Invalid 'a' e.g. 'replay' parameter, should be != 0")
 		return
@@ -128,9 +126,8 @@ func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.B
 		for replay < 0 && len(lastMoves) > 0 {
 			var lastMove revgame.Move
 			lastMove, lastMoves = lastMoves.Pop()
-			if board, err = board.UndoMove(lastMove.Address().XY()); err != nil {
-				return
-			}
+			a := lastMove.Address()
+			board = board.UndoMove(a, lastMoves.LastMove().Address())
 		}
 	} else if replay > 0 {
 		//
@@ -142,8 +139,7 @@ func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.B
 func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, player revgame.Disk) (m bots.MessageFromBot, err error) {
 	c := whc.Context()
 	q := callbackUrl.Query()
-	ca := turnbased.CellAddress(q.Get("a"))
-	x, y := ca.XY()
+	a := revgame.CellAddressToRevAddress(turnbased.CellAddress(q.Get("a")))
 
 	currentPlayer := board.NextPlayer()
 	if currentPlayer == revgame.Completed {
@@ -159,9 +155,9 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgam
 	// -- Start[ Make move ]--
 	if mode == revgame.WithAI && player != currentPlayer {
 		move := revgame.SimpleAI{}.GetMove(board, currentPlayer)
-		board, err = board.MakeMove(currentPlayer, move.X, move.Y)
+		board, err = board.MakeMove(currentPlayer, move)
 	} else {
-		board, err = board.MakeMove(currentPlayer, x, y)
+		board, err = board.MakeMove(currentPlayer, a)
 	}
 	// -- End[ Make move ]--
 
@@ -189,10 +185,8 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgam
 
 	var lastMoves revgame.Transcript
 	if mode != revgame.MultiPlayer {
-		if lastMoves, err = revgame.NewTranscript(q.Get("h")); err != nil {
-			return
-		}
-		lastMoves += revgame.Transcript(ca)
+		lastMoves = revgame.NewTranscript(q.Get("h"))
+		lastMoves = append(lastMoves, byte(a.Index()))
 	}
 
 	return renderTelegramMessage(whc, callbackUrl, board, mode, player, lastMoves, possibleMove)

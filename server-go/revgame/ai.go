@@ -27,7 +27,7 @@ func (SimpleAI) GetMove(board Board, player Disk) (move address) {
 		var bestScore int
 		bestMoves := make([]address, 0, len(moves))
 		for _, m := range moves {
-			b, err := board.MakeMove(player, m.X, m.Y)
+			b, err := board.MakeMove(player, m)
 			if err != nil {
 				panic(err)
 			}

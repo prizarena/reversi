@@ -30,8 +30,8 @@ func TestPlayerDisks_Add(t *testing.T) {
 }
 
 func TestPlayerDisks_Add_All(t *testing.T) {
-	for x := 0; x < 8; x++ {
-		for y := 0; y < 8; y++ {
+	for x := int8(0); x < 8; x++ {
+		for y := int8(0); y < 8; y++ {
 			a := address{x, y}
 			var disks Disks
 			var err error

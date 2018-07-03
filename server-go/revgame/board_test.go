@@ -44,7 +44,7 @@ func TestBoard_MakeMove(t *testing.T) {
 
 	for i, step := range testSteps {
 		var newBoard Board
-		newBoard, err = board.MakeMove(step.player, step.move.X, step.move.Y)
+		newBoard, err = board.MakeMove(step.player, step.move)
 		if err != nil {
 			if newBoard != board {
 				t.Fatalf("err != nil && newBoard != board")
@@ -71,7 +71,7 @@ func TestBoard_MakeMove(t *testing.T) {
 		if newBoard == board {
 			t.Fatalf("Step #%v: newBoard == board", i+1)
 		}
-		t.Logf("Step #%v:%v", i+1, newBoard.DrawBoard("*", "O", ".", "", "\n"))
+		//t.Logf("Step #%v:%v", i+1, newBoard.DrawBoard("*", "O", ".", "", "\n"))
 		board = newBoard
 	}
 }
@@ -107,24 +107,29 @@ func TestBoard_UndoMove(t *testing.T) {
 			board = step.board
 			continue
 		}
-		x, y := step.ca.XY()
-		if board, err = board.MakeMove(step.p, x, y); err != nil {
+		a := CellAddressToRevAddress(step.ca)
+		if board, err = board.MakeMove(step.p, a); err != nil {
 			t.Fatalf("uexpeced err at step %v(%v=%v): %v", i+1, step.p, step.ca, err)
 		}
 		validateBoard(board)
 		steps[i].board = board
-		t.Logf("Step #%v%v", i, board.DrawBoard("*", "O", "", "", "\n"))
+		//t.Logf("Step #%v%v", i, board.DrawBoard("*", "O", "", "", "\n"))
 	}
-	for i := len(steps)-1; i >= 0; i-- {
+	for i := len(steps)-1; i > 0; i-- {
 		step := steps[i]
-		if board, err = board.UndoMove(step.ca.XY()); err != nil {
-			t.Fatal(err)
-		}
+		a := CellAddressToRevAddress(step.ca)
+		prevStep := steps[i-1]
+		board = board.UndoMove(a, CellAddressToRevAddress(prevStep.ca))
 		validateBoard(board)
-		if board != steps[i-1].board {
-			t.Fatalf("Invalid undo:\nExpected: %v\n Got: %v",
-				steps[i-1].board.DrawBoard("*", "O", "", "", "\n"),
+		if board.Last != prevStep.board.Last {
+			t.Errorf("Invalid undo at step %v: Expected.Last:%v != board.Last:%v", i+1, string(prevStep.board.Last), string(board.Last))
+		}
+		if board != prevStep.board {
+			t.Fatalf("Invalid undo at step %v:\nExpected: %v\n Got: %v",
+				i+1,
+				prevStep.board.DrawBoard("*", "O", "", "", "\n"),
 				board.DrawBoard("*", "O", "", "", "\n"))
 		}
 	}
 }
+

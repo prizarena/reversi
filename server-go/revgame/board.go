@@ -6,6 +6,7 @@ import (
 	"strings"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/prizarena/turn-based"
 )
 
 type Disk rune
@@ -15,6 +16,11 @@ var (
 	White     Disk = 'w'
 	Empty     Disk = ' '
 	Completed Disk = '!'
+)
+
+const (
+	BoardSize = 8
+	BoardCellsCount = BoardSize*BoardSize
 )
 
 func OtherPlayer(player Disk) Disk {
@@ -93,6 +99,17 @@ func (b Board) NextPlayer() Disk {
 			return Black
 		}
 		return Completed
+	case Empty:
+		turns := b.Turns()
+		if turns < 10 {
+			switch turns % 2 {
+			case 0:
+				return White
+			case 1:
+				return Black
+			}
+		}
+		panic(fmt.Sprintf("can't detect last player as there are more then %v turns", turns))
 	default:
 		panic(fmt.Sprintf("unexpected b.Last: [%v]", b.Last))
 	}
@@ -106,8 +123,8 @@ func (b Board) Rows(black, white, possibleMove, empty string) (rows [8][8]string
 		validMoves = b.getValidMoves(player)
 	}
 
-	for y := 0; y < 8; y++ {
-		for x := 0; x < 8; x++ {
+	for y := int8(0); y < 8; y++ {
+		for x := int8(0); x < 8; x++ {
 			bit := Disks(1 << (uint(y)*8 + uint(x)))
 			if bit&b.Whites != 0 {
 				rows[y][x] = white
@@ -148,7 +165,17 @@ func (b Board) DrawBoard(black, white, possibleMove string, colSeparator, rowSep
 }
 
 type address struct {
-	X, Y int
+	X, Y int8
+}
+
+func (a address) Index() int8 {
+	return a.Y*BoardSize + a.X
+}
+
+var EmptyAddress = address{-127, -127}
+
+func (a address) IsOnBoard() bool {
+	return a.X >= 0 && a.X < BoardCellsCount && a.Y >= 0 && a.Y < BoardCellsCount
 }
 
 func (a address) move(d direction) address {
@@ -174,14 +201,17 @@ func (b Board) disk(a address) Disk {
 	return Empty
 }
 
-func (b Board) UndoMove(x, y int) (board Board, err error) {
+func (b Board) UndoMove(a, prevMove address) (board Board) {
 	board = b
-	a := address{x, y}
 	switch b.disk(a) {
 	case Black:
 		board.Blacks, board.Whites = board.undoMove(a, board.Blacks, board.Whites)
 	case White:
 		board.Whites, board.Blacks = board.undoMove(a, board.Whites, board.Blacks)
+	}
+	board.Last = board.disk(prevMove)
+	if board.Last == Empty {
+		board.Last = board.NextPlayer()
 	}
 	return
 }
@@ -207,8 +237,7 @@ func (b Board) undoMove(disk address, removing, adding Disks) (Disks, Disks) {
 	return removing, adding
 }
 
-func (b Board) MakeMove(player Disk, x, y int) (board Board, err error) {
-	a := address{x, y}
+func (b Board) MakeMove(player Disk, a address) (board Board, err error) {
 	var disksToFlip []address
 	board = b
 
@@ -240,7 +269,7 @@ func (b Board) MakeMove(player Disk, x, y int) (board Board, err error) {
 }
 
 type direction struct {
-	x, y int
+	x, y int8
 }
 
 var directions = []direction{
@@ -324,8 +353,8 @@ func (b Board) freeCellsCount() int {
 func (b Board) getValidMoves(player Disk) (validMoves []address) {
 	//  Returns a list of [x,y] lists of valid moves for the given player on the given board.
 	validMoves = make([]address, 0, b.freeCellsCount())
-	for x := 0; x < 8; x++ {
-		for y := 0; y < 8; y++ {
+	for x := int8(0); x < 8; x++ {
+		for y := int8(0); y < 8; y++ {
 			disksToFlip, err := b.getDisksToFlip(address{x, y}, player)
 			if err == nil && len(disksToFlip) > 0 {
 				validMoves = append(validMoves, address{x, y})
@@ -336,8 +365,8 @@ func (b Board) getValidMoves(player Disk) (validMoves []address) {
 }
 
 func (b Board) hasValidMoves(player Disk) bool {
-	for x := 0; x < 8; x++ {
-		for y := 0; y < 8; y++ {
+	for x := int8(0); x < 8; x++ {
+		for y := int8(0); y < 8; y++ {
 			disksToFlip, err := b.getDisksToFlip(address{x, y}, player) // TODO: no need slice of disksToFlip
 			if err == nil && len(disksToFlip) > 0 {
 				return true
@@ -364,4 +393,12 @@ func (b Board) Score(player Disk) int {
 	default:
 		panic(fmt.Sprintf("unknown player: %v", player))
 	}
+}
+
+func CellAddressToRevAddress(ca turnbased.CellAddress) address {
+	if ca == "" {
+		return EmptyAddress
+	}
+	x, y := ca.XY()
+	return address{X: int8(x), Y: int8(y)}
 }
