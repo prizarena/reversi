@@ -14,23 +14,31 @@ func NewTranscript(s string) (Transcript, error) {
 	return Transcript(s), nil
 }
 
-func (t Transcript) Pop() (address, Transcript) {
+func (t Transcript) Pop() (Move, Transcript) {
 	if len(t) == 0 {
 		panic("nothing to pop")
 	}
-	last := turnbased.CellAddress(t[len(t)-2:])
-	x, y := last.XY()
-
-	return address{x, y}, t[:len(t)-2]
+	last := Move(t[len(t)-3:])
+	return last, t[:len(t)-3]
 }
 
 func (t Transcript) String() string {
 	return string(t)
 }
 
-func (t Transcript) LastMove() turnbased.CellAddress {
+func (t Transcript) LastMove() Move {
 	if t == "" {
 		return ""
 	}
-	return turnbased.CellAddress(t[len(t)-2:])
+	return Move(t[len(t)-3:])
+}
+
+type Move string
+
+func (m Move) Address() turnbased.CellAddress {
+	return turnbased.CellAddress(m[1:])
+}
+
+func (m Move) Player() Disk {
+	return Disk(m[0])
 }

@@ -3,6 +3,7 @@ package revgame
 import (
 	"testing"
 	"github.com/pkg/errors"
+	"github.com/prizarena/turn-based"
 )
 
 func TestBoard_DrawBoard(t *testing.T) {
@@ -14,26 +15,26 @@ func TestBoard_DrawBoard(t *testing.T) {
 func TestBoard_MakeMove(t *testing.T) {
 	testSteps := []struct {
 		player Disk
-		move address
-		err error
-		cause error
+		move   address
+		err    error
+		cause  error
 	}{
 		{
 			player: Black,
-			move: address{1, 1},
-			cause: ErrNotValidMove,
+			move:   address{1, 1},
+			cause:  ErrNotValidMove,
 		},
 		{
 			player: Black,
-			move: address{3, 2},
+			move:   address{3, 2},
 		},
 		{
 			player: White,
-			move: address{2, 4},
+			move:   address{2, 4},
 		},
 		{
 			player: Black,
-			move: address{2, 5},
+			move:   address{2, 5},
 		},
 	}
 
@@ -72,5 +73,58 @@ func TestBoard_MakeMove(t *testing.T) {
 		}
 		t.Logf("Step #%v:%v", i+1, newBoard.DrawBoard("*", "O", ".", "", "\n"))
 		board = newBoard
+	}
+}
+
+func TestBoard_UndoMove(t *testing.T) {
+	validateBoard := func(b Board) {
+		if (b.Whites & b.Blacks) != 0 {
+			whites := b
+			whites.Blacks = 0
+			blacks := b
+			blacks.Whites = 0
+			t.Fatalf("board.Whites | board.Blacks:\nblacks:\n%v\nwhites:\n%v",
+				blacks.DrawBoard("*", "O", "", "", "\n"),
+				whites.DrawBoard("*", "O", "", "", "\n"),
+			)
+		}
+	}
+
+	steps := []struct {
+		p Disk
+		ca turnbased.CellAddress
+		board Board
+	} {
+		{p: ' ', board: OthelloBoard},
+		{p: Black, ca: "F5"},
+		{p: White, ca: "F4"},
+	}
+	var err error
+	var board Board
+
+	for i, step := range steps {
+		if i == 0 {
+			board = step.board
+			continue
+		}
+		x, y := step.ca.XY()
+		if board, err = board.MakeMove(step.p, x, y); err != nil {
+			t.Fatalf("uexpeced err at step %v(%v=%v): %v", i+1, step.p, step.ca, err)
+		}
+		validateBoard(board)
+		steps[i].board = board
+		t.Logf("Step #%v%v", i, board.DrawBoard("*", "O", "", "", "\n"))
+	}
+	for i := len(steps)-1; i >= 0; i-- {
+		step := steps[i]
+		if board, err = board.UndoMove(step.ca.XY()); err != nil {
+			t.Fatal(err)
+		}
+		validateBoard(board)
+		if board != steps[i-1].board {
+			t.Fatalf("Invalid undo:\nExpected: %v\n Got: %v",
+				steps[i-1].board.DrawBoard("*", "O", "", "", "\n"),
+				board.DrawBoard("*", "O", "", "", "\n"))
+		}
 	}
 }

@@ -197,7 +197,7 @@ func (b Board) undoMove(disk address, removing, adding Disks) (Disks, Disks) {
 			if !isOnBoard(next) || !removing.isPlaced(next) {
 				break
 			}
-			removing.remove(a)
+			removing = removing.remove(a)
 			var err error
 			if adding, err = adding.add(a); err != nil {
 				panic(err)
