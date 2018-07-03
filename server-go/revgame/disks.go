@@ -40,13 +40,11 @@ func (pd Disks) mustAdd(a address) Disks {
 	return result
 }
 
-func (pd Disks) remove(a address) (result Disks, err error) {
+func (pd Disks) remove(a address) (result Disks) {
 	result = pd
 	bit := pd.bit(a)
 	if (bit & pd) == 0 {
-		panic(ErrNotOccupied)
-		err = errors.WithMessage(ErrNotOccupied, a.String())
-		panic(err)
+		panic(errors.WithMessage(ErrNotOccupied, a.String()))
 	}
 	result ^= bit
 	return

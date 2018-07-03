@@ -30,7 +30,7 @@ func OtherPlayer(player Disk) Disk {
 type Board struct {
 	Blacks Disks
 	Whites Disks
-	Last Disk
+	Last   Disk
 }
 
 func (b Board) Turns() int {
@@ -38,7 +38,7 @@ func (b Board) Turns() int {
 }
 
 var OthelloBoard = Board{
-	Last: White,
+	Last:   White,
 	Whites: (1 << (3*8 + 3)) | (1 << (4*8 + 4)),
 	Blacks: (1 << (3*8 + 4)) | (1 << (4*8 + 3)),
 }
@@ -59,9 +59,7 @@ func (b Board) flip(a address) (board Board) {
 
 	doFlip := func(adding, removing Disks) (Disks, Disks) {
 		var err error
-		if removing, err = removing.remove(a); err != nil {
-			panic(err)
-		}
+		removing = removing.remove(a);
 		if adding, err = adding.add(a); err != nil {
 			panic(err)
 		}
@@ -153,6 +151,12 @@ type address struct {
 	X, Y int
 }
 
+func (a address) move(d direction) address {
+	a.X += d.x
+	a.Y += d.y
+	return a
+}
+
 func (a address) String() string {
 	return fmt.Sprintf("{x: %v, y: %v}", a.X, a.Y)
 }
@@ -168,6 +172,39 @@ func (b Board) disk(a address) Disk {
 		return Black
 	}
 	return Empty
+}
+
+func (b Board) UndoMove(x, y int) (board Board, err error) {
+	board = b
+	a := address{x, y}
+	switch b.disk(a) {
+	case Black:
+		board.Blacks, board.Whites = board.undoMove(a, board.Blacks, board.Whites)
+	case White:
+		board.Whites, board.Blacks = board.undoMove(a, board.Whites, board.Blacks)
+	}
+	return
+}
+
+func (b Board) undoMove(disk address, removing, adding Disks) (Disks, Disks) {
+	removing = removing.remove(disk)
+
+	for _, direction := range directions {
+		a := disk
+		for {
+			a = a.move(direction)
+			next := a.move(direction)
+			if !isOnBoard(next) || !removing.isPlaced(next) {
+				break
+			}
+			removing.remove(a)
+			var err error
+			if adding, err = adding.add(a); err != nil {
+				panic(err)
+			}
+		}
+	}
+	return removing, adding
 }
 
 func (b Board) MakeMove(player Disk, x, y int) (board Board, err error) {
@@ -202,6 +239,14 @@ func (b Board) MakeMove(player Disk, x, y int) (board Board, err error) {
 	return
 }
 
+type direction struct {
+	x, y int
+}
+
+var directions = []direction{
+	{0, 1}, {1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1},
+}
+
 func (b Board) getDisksToFlip(start address, player Disk) (disksToFlip []address, err error) {
 	if !isOnBoard(start) {
 		panic(fmt.Sprintf("address is outside of board: %v", start))
@@ -226,11 +271,7 @@ func (b Board) getDisksToFlip(start address, player Disk) (disksToFlip []address
 
 	disksToFlip = make([]address, 0, 5*3+4) // Theoretical maximum we can flip with 1 move
 
-	for _, direction := range []struct {
-		x, y int
-	}{
-		{0, 1}, {1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1},
-	} {
+	for _, direction := range directions {
 		a := start
 		a.X += direction.x // first step in the direction
 		a.Y += direction.y // first step in the direction
@@ -269,9 +310,9 @@ func (b Board) getDisksToFlip(start address, player Disk) (disksToFlip []address
 
 	switch player { // temporarily set the tile on the board.
 	case Black:
-		board.Blacks, err = board.Blacks.remove(start)
+		board.Blacks = board.Blacks.remove(start)
 	case White:
-		board.Whites, err = board.Whites.remove(start)
+		board.Whites = board.Whites.remove(start)
 	}
 	return
 }

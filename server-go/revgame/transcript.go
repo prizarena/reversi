@@ -1,17 +1,20 @@
 package revgame
 
-import "github.com/prizarena/turn-based"
+import (
+	"github.com/prizarena/turn-based"
+	"github.com/pkg/errors"
+)
 
-type transcript string
+type Transcript string
 
-func NewTranscript(s string) transcript {
+func NewTranscript(s string) (Transcript, error) {
 	if len(s) % 2 != 0 {
-		panic("transcript length should be even")
+		return "", errors.New("transcript length should be even")
 	}
-	return transcript(s)
+	return Transcript(s), nil
 }
 
-func (t transcript) Pop() (address, transcript) {
+func (t Transcript) Pop() (address, Transcript) {
 	if len(t) == 0 {
 		panic("nothing to pop")
 	}
@@ -21,6 +24,13 @@ func (t transcript) Pop() (address, transcript) {
 	return address{x, y}, t[:len(t)-2]
 }
 
-func (t transcript) String() string {
+func (t Transcript) String() string {
 	return string(t)
+}
+
+func (t Transcript) LastMove() turnbased.CellAddress {
+	if t == "" {
+		return ""
+	}
+	return turnbased.CellAddress(t[len(t)-2:])
 }

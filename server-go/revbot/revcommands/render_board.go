@@ -106,7 +106,7 @@ func renderReversiBoardMessage(c context.Context, t strongo.SingleLocaleTranslat
 	return
 }
 
-func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revgame.Disk, isCompleted bool, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
+func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revgame.Disk, isCompleted bool, lastMoves revgame.Transcript, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
 	// switch nextDisk {
 	// case revgame.Black, revgame.White: // OK
 	// default:
@@ -144,11 +144,11 @@ func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revg
 	kb = &tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 			{
-				//{Text: emoji.FastReverseButton + " To start", CallbackData: "back?to=start"},
-				{Text: emoji.ReverseButton + " -1 step", CallbackData: "replay?to=back"},
-				{Text: emoji.Megaphone + " Share", CallbackData: "replay?to=back"},
-				{Text: emoji.PlayButton + " +1 step", CallbackData: "replay?to=forward"},
-				//{Text: emoji.FastforwardButton, CallbackData: "replay?to=end"},
+				// {Text: emoji.FastReverseButton + " To start", CallbackData: "replay?to=0"},
+				{Text: emoji.ReverseButton + " -1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, player, turnbased.CellAddress("-1"), lastMoves, lang, tournamentID)},
+				// {Text: emoji.Megaphone + " Share", CallbackData: "replay?to=-1"},
+				{Text: emoji.PlayButton + " +1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, player, turnbased.CellAddress("+1"), lastMoves, lang, tournamentID)},
+				// {Text: emoji.FastforwardButton + "", CallbackData: "replay?to=end"},
 			},
 			make([]tgbotapi.InlineKeyboardButton, 8),
 			make([]tgbotapi.InlineKeyboardButton, 8),
@@ -160,9 +160,10 @@ func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revg
 			make([]tgbotapi.InlineKeyboardButton, 8),
 		},
 	}
+
 	getButton := func(x, y int, cell string) tgbotapi.InlineKeyboardButton {
 		ca := turnbased.NewCellAddress(x, y)
-		callbackData := getPlaceDiskSinglePlayerCallbackData(board, mode, player, ca, lang, tournamentID)
+		callbackData := getPlaceDiskSinglePlayerCallbackData(board, mode, player, ca, lastMoves, lang, tournamentID)
 		return tgbotapi.NewInlineKeyboardButtonData(cell, callbackData)
 	}
 

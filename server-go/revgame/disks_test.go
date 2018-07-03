@@ -68,11 +68,12 @@ func TestPlayerDisks_Remove(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
+		err = nil
 		switch testCase.do {
 		case "add":
 			pd, err = pd.add(testCase.target)
 		case "remove":
-			pd, err = pd.remove(testCase.target)
+			pd = pd.remove(testCase.target)
 		}
 		if errors.Cause(err) != testCase.expectedErr {
 			t.Fatalf("case #%v: expected err=%v, got=%v", i+1, testCase.expectedErr, err)

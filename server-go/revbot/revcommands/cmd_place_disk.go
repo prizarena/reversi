@@ -22,7 +22,7 @@ import (
 
 const placeDiskCommandCode = "place"
 
-func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode, player revgame.Disk, address turnbased.CellAddress, lang, tournamentID string) string {
+func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode, player revgame.Disk, address turnbased.CellAddress, lastMoves revgame.Transcript, lang, tournamentID string) string {
 	s := new(bytes.Buffer)
 	s.WriteString("place?a=" + string(address))
 	if mode != revgame.MultiPlayer {
@@ -48,6 +48,9 @@ func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode
 	if lang != "" {
 		s.WriteString("&l=" + lang)
 	}
+	if mode != revgame.MultiPlayer && lastMoves != "" {
+		s.WriteString("&h=" + string(lastMoves))
+	}
 	return s.String()
 }
 
@@ -60,7 +63,6 @@ func getPlayerFromString(s string) (player revgame.Disk) {
 var placeDiskCommand = bots.NewCallbackCommand(
 	placeDiskCommandCode,
 	func(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
-		c := whc.Context()
 		q := callbackUrl.Query()
 		mode := revgame.Mode(q.Get("m"))
 		var player revgame.Disk // Needed for AI mode only so we can swap sides each turn
@@ -91,78 +93,112 @@ var placeDiskCommand = bots.NewCallbackCommand(
 			}
 			board.Last = getPlayerFromString(b[2])
 		}
-		ca := turnbased.CellAddress(q.Get("a"))
-		// var currentPlayer, nextPlayer revgame.Disk
-		x, y := ca.XY()
 
-		currentPlayer := board.NextPlayer()
-		if currentPlayer == revgame.Completed {
-			m.BotMessage = telegram.CallbackAnswer(tgbotapi.AnswerCallbackQueryConfig{
-				Text:      "This game has been completed",
-				ShowAlert: true,
-			})
-			return
+		a := q.Get("a")
+		switch a {
+		case "+1", "-1":
+			return replayAction(whc, callbackUrl, board, mode, player)
+		default:
+			return placeDiskAction(whc, callbackUrl, board, mode, player)
 		}
-
-		// if
-		// switch q.Get("d") {
-		// case "w":
-		// 	currentPlayer = revgame.White
-		// case "b":
-		// 	currentPlayer = revgame.Black
-		// default:
-		// 	err = errors.New("unknown disk: " + q.Get("d"))
-		// }
-
-		possibleMove := ""
-
-		// -- Start[ Make move ]--
-		if mode == revgame.WithAI && player != currentPlayer {
-			move := revgame.SimpleAI{}.GetMove(board, currentPlayer)
-			board, err = board.MakeMove(currentPlayer, move.X, move.Y)
-		} else {
-			board, err = board.MakeMove(currentPlayer, x, y)
-		}
-		// -- End[ Make move ]--
-
-		if err != nil {
-			if cause := errors.Cause(err); cause == revgame.ErrNotValidMove || cause == revgame.ErrAlreadyOccupied {
-				log.Debugf(c, "Wrong move: %v", cause)
-				m.BotMessage = telegram.CallbackAnswer(tgbotapi.AnswerCallbackQueryConfig{
-					Text: strings.Title(cause.Error()) + ".",
-				})
-				if _, err = whc.Responder().SendMessage(c, m, bots.BotAPISendMessageOverHTTPS); err != nil {
-					log.Errorf(c, err.Error())
-					err = nil // Non critical
-				}
-				if cause == revgame.ErrNotValidMove {
-					possibleMove = emoji.SoccerBall
-				}
-				m.BotMessage = nil
-			} else {
-				return
-			}
-			// nextPlayer = currentPlayer
-		} else {
-			// nextPlayer = revgame.OtherPlayer(currentPlayer)
-		}
-
-		var tournament pamodels.Tournament
-		tournament.ID = q.Get("t")
-		lang := q.Get("l")
-		if lang != "" {
-			if err = whc.SetLocale(lang); err != nil {
-				return
-			}
-		}
-		m.IsEdit = true
-		m.Format = bots.MessageFormatHTML
-		isCompleted := board.IsCompleted()
-		m.Text = renderReversiBoardText(whc, board, mode, player, isCompleted, nil)
-		m.Keyboard = renderReversiTgKeyboard(board, mode, player, isCompleted, possibleMove, lang, tournament.ID)
-		return
 	},
 )
+
+func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, player revgame.Disk) (m bots.MessageFromBot, err error) {
+	q := callbackUrl.Query()
+	replay := q.Get("a")
+	var lastMoves revgame.Transcript
+	if lastMoves, err = revgame.NewTranscript(q.Get("h")); err != nil {
+		return
+	}
+	if replay == "-1" {
+		lastMove := turnbased.CellAddress(lastMoves[len(lastMoves)-2:])
+		if board, err = board.UndoMove(lastMove.XY()); err != nil {
+			return
+		}
+	}
+	return renderTelegramMessage(whc, callbackUrl, board, mode, player, lastMoves, "")
+}
+
+func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, player revgame.Disk) (m bots.MessageFromBot, err error) {
+	c := whc.Context()
+	q := callbackUrl.Query()
+	ca := turnbased.CellAddress(q.Get("a"))
+	x, y := ca.XY()
+
+	currentPlayer := board.NextPlayer()
+	if currentPlayer == revgame.Completed {
+		m.BotMessage = telegram.CallbackAnswer(tgbotapi.AnswerCallbackQueryConfig{
+			Text:      "This game has been completed",
+			ShowAlert: true,
+		})
+		return
+	}
+
+	possibleMove := ""
+
+	// -- Start[ Make move ]--
+	if mode == revgame.WithAI && player != currentPlayer {
+		move := revgame.SimpleAI{}.GetMove(board, currentPlayer)
+		board, err = board.MakeMove(currentPlayer, move.X, move.Y)
+	} else {
+		board, err = board.MakeMove(currentPlayer, x, y)
+	}
+	// -- End[ Make move ]--
+
+	if err != nil {
+		if cause := errors.Cause(err); cause == revgame.ErrNotValidMove || cause == revgame.ErrAlreadyOccupied {
+			log.Debugf(c, "Wrong move: %v", cause)
+			m.BotMessage = telegram.CallbackAnswer(tgbotapi.AnswerCallbackQueryConfig{
+				Text: strings.Title(cause.Error()) + ".",
+			})
+			if _, err = whc.Responder().SendMessage(c, m, bots.BotAPISendMessageOverHTTPS); err != nil {
+				log.Errorf(c, err.Error())
+				err = nil // Non critical
+			}
+			if cause == revgame.ErrNotValidMove {
+				possibleMove = emoji.SoccerBall
+			}
+			m.BotMessage = nil
+		} else {
+			return
+		}
+		// nextPlayer = currentPlayer
+	} else {
+		// nextPlayer = revgame.OtherPlayer(currentPlayer)
+	}
+
+	var lastMoves revgame.Transcript
+	if mode != revgame.MultiPlayer {
+		if lastMoves, err = revgame.NewTranscript(q.Get("h") + string(ca)); err != nil {
+			return
+		}
+		if len(lastMoves) > 8 {
+			lastMoves = lastMoves[len(lastMoves)-8:]
+		}
+	}
+
+	return renderTelegramMessage(whc, callbackUrl, board, mode, player, lastMoves, possibleMove)
+}
+
+func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, player revgame.Disk, lastMoves revgame.Transcript, possibleMove string) (m bots.MessageFromBot, err error) {
+	q := callbackUrl.Query()
+	lang := q.Get("l")
+	if lang != "" {
+		if err = whc.SetLocale(lang); err != nil {
+			return
+		}
+	}
+	var tournament pamodels.Tournament
+	tournament.ID = q.Get("t")
+
+	m.IsEdit = true
+	m.Format = bots.MessageFormatHTML
+	isCompleted := board.IsCompleted()
+	m.Text = renderReversiBoardText(whc, board, mode, player, isCompleted, nil)
+	m.Keyboard = renderReversiTgKeyboard(board, mode, player, isCompleted, lastMoves, possibleMove, lang, tournament.ID)
+	return
+}
 
 func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Board, mode revgame.Mode, player revgame.Disk, isCompleted bool, userNames []string) string {
 	text := new(bytes.Buffer)
