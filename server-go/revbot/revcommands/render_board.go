@@ -118,8 +118,8 @@ func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revg
 		switch mode {
 		case revgame.SinglePlayer:
 			playAgainCallbackData.WriteString(newBoardSinglePlayerCommandCode + "?")
-		case revgame.WithAI:
-			playAgainCallbackData.WriteString(newBoardWithAICommandCode + "?p=" + string(player))
+		// case revgame.WithAI:
+		// 	playAgainCallbackData.WriteString(newBoardWithAICommandCode + "?p=" + string(player))
 		case revgame.MultiPlayer:
 			playAgainCallbackData.WriteString(newBoardMultiPlayerCommandCode)
 		}
@@ -166,14 +166,21 @@ func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revg
 		}
 	}
 
-	if mode != revgame.MultiPlayer {
-		kb.InlineKeyboard = append(kb.InlineKeyboard, []tgbotapi.InlineKeyboardButton{
-			// {Text: emoji.FastReverseButton + " To start", CallbackData: "replay?to=0"},
-			{Text: emoji.ReverseButton + " -1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, player, turnbased.CellAddress("-1"), lastMoves, backSteps, lang, tournamentID)},
-			// {Text: emoji.Megaphone + " Share", CallbackData: "replay?to=-1"},
-			{Text: emoji.PlayButton + " +1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, player, turnbased.CellAddress("+1"), lastMoves, backSteps, lang, tournamentID)},
-			// {Text: emoji.FastforwardButton + "", CallbackData: "replay?to=end"},
-		})
+	if mode == revgame.SinglePlayer {
+		aiButton := tgbotapi.InlineKeyboardButton{Text: emoji.RobotFace + " AI", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, player, turnbased.CellAddress("~"), lastMoves, backSteps, lang, tournamentID)}
+
+		if backSteps == 0 {
+			kb.InlineKeyboard = append(kb.InlineKeyboard, []tgbotapi.InlineKeyboardButton{
+				{Text: emoji.ReverseButton + " -1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, player, turnbased.CellAddress("-1"), lastMoves, backSteps, lang, tournamentID)},
+				aiButton,
+			})
+		} else {
+			kb.InlineKeyboard = append(kb.InlineKeyboard, []tgbotapi.InlineKeyboardButton{
+				{Text: emoji.ReverseButton + " -1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, player, turnbased.CellAddress("-1"), lastMoves, backSteps, lang, tournamentID)},
+				{Text: emoji.PlayButton + " +1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, player, turnbased.CellAddress("+1"), lastMoves, backSteps, lang, tournamentID)},
+				aiButton,
+			})
+		}
 	}
 	return
 }

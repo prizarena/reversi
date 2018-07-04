@@ -13,21 +13,19 @@ import (
 const (
 	newBoardSinglePlayerCommandCode = "singleplayer"
 	newBoardMultiPlayerCommandCode  = "multiplayer"
-	newBoardWithAICommandCode       = "ai"
+	// newBoardWithAICommandCode       = "ai"
 )
 
 func newBoardCallbackData(mode revgame.Mode) string {
 	switch mode {
 	case revgame.SinglePlayer:
 		return newBoardSinglePlayerCommandCode
-	case revgame.WithAI:
-		return newBoardWithAICommandCode
 	default:
 		panic("unknown mode: " + string(mode))
 	}
 }
 
-var newBoardSinleplayerCommand = bots.Command{
+var newBoardSinglePlayerCommand = bots.Command{
 	Code:     newBoardSinglePlayerCommandCode,
 	Commands: []string{"/singleplayer"},
 	Action: func(whc bots.WebhookContext) (m bots.MessageFromBot, err error) {
@@ -39,21 +37,21 @@ var newBoardSinleplayerCommand = bots.Command{
 	},
 }
 
-var newBoardWithAICommand = bots.Command{
-	Code:     newBoardWithAICommandCode,
-	Commands: []string{"/ai"},
-	Action: func(whc bots.WebhookContext) (m bots.MessageFromBot, err error) {
-		return newPlayAction(whc, "", revgame.WithAI, revgame.Black)
-	},
-	CallbackAction: func(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
-		tournamentID := callbackUrl.Query().Get("t")
-		player := getPlayerFromString(callbackUrl.Query().Get("p"))
-		if player != revgame.Black && player != revgame.White {
-			player = revgame.Black
-		}
-		return newPlayAction(whc, tournamentID, revgame.WithAI, player)
-	},
-}
+// var newBoardWithAICommand = bots.Command{
+// 	Code:     newBoardWithAICommandCode,
+// 	Commands: []string{"/ai"},
+// 	Action: func(whc bots.WebhookContext) (m bots.MessageFromBot, err error) {
+// 		return newPlayAction(whc, "", revgame.WithAI, revgame.Black)
+// 	},
+// 	CallbackAction: func(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
+// 		tournamentID := callbackUrl.Query().Get("t")
+// 		player := getPlayerFromString(callbackUrl.Query().Get("p"))
+// 		if player != revgame.Black && player != revgame.White {
+// 			player = revgame.Black
+// 		}
+// 		return newPlayAction(whc, tournamentID, revgame.WithAI, player)
+// 	},
+// }
 
 func newPlayAction(whc bots.WebhookContext, tournamentID string, mode revgame.Mode, player revgame.Disk) (m bots.MessageFromBot, err error) {
 	var tournament pamodels.Tournament

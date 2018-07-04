@@ -11,7 +11,7 @@ const (
 	FirstMoveDoneAwaitingSecond = "FirstMoveDoneAwaitingSecond"
 	Board                       = "Board"
 	SinglePlayer                = "SinglePlayer"
-	NewPlayWithAI               = "NewPlayWithAI"
+	// NewPlayWithAI               = "NewPlayWithAI"
 	MultiPlayer                 = "MultiPlayer"
 	FindFast                    = "FindFast"
 	ChooseSizeOfNextBoard       = "ChooseSizeOfNextBoard"

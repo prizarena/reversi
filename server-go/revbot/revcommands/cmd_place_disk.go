@@ -30,14 +30,14 @@ func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode
 		if turns := board.Turns(); turns > 0 {
 			s.WriteString("&c=" + strconv.Itoa(turns))
 		}
-		if mode == revgame.WithAI {
-			switch player {
-			case revgame.Black, revgame.White:
-				s.WriteString("&p=" + string(player))
-			default:
-				panic("mode=WithAI has unexpected player: " + string(player))
-			}
-		}
+		// if mode == revgame.WithAI {
+		// 	switch player {
+		// 	case revgame.Black, revgame.White:
+		// 		s.WriteString("&p=" + string(player))
+		// 	default:
+		// 		panic("mode=WithAI has unexpected player: " + string(player))
+		// 	}
+		// }
 	}
 
 	fmt.Fprintf(s, "&b=%v_%v",
@@ -78,8 +78,8 @@ var placeDiskCommand = bots.NewCallbackCommand(
 		mode := revgame.Mode(q.Get("m"))
 		var player revgame.Disk // Needed for AI mode only so we can swap sides each turn
 		switch mode {
-		case revgame.WithAI:
-			player = getPlayerFromString(q.Get("p"))
+		// case revgame.WithAI:
+		// 	player = getPlayerFromString(q.Get("p"))
 		case revgame.SinglePlayer, revgame.MultiPlayer: // OK
 		case "":
 			mode = revgame.MultiPlayer
@@ -119,14 +119,46 @@ var placeDiskCommand = bots.NewCallbackCommand(
 		}
 
 		a := q.Get("a")
-		switch a[0] {
-		case '+', '-':
-			return replayAction(whc, callbackUrl, board, mode, transcript, backSteps, player)
-		default:
-			return placeDiskAction(whc, callbackUrl, board, mode, transcript, backSteps, player)
+		if a == "~" {
+			return aiAction(whc, callbackUrl, board, mode, transcript, backSteps, player)
+		} else {
+			switch a[0] {
+			case '+', '-':
+				return replayAction(whc, callbackUrl, board, mode, transcript, backSteps, player)
+			default:
+				return placeDiskAction(whc, callbackUrl, board, mode, transcript, backSteps, player)
+			}
 		}
 	},
 )
+
+func aiAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, transcript revgame.Transcript, backSteps int, player revgame.Disk) (m bots.MessageFromBot, err error) {
+	// a = revgame.SimpleAI{}.GetMove(board, currentPlayer)
+	// board, err = board.MakeMove(currentPlayer, a)
+	return
+}
+
+func rewind(board revgame.Board, transcript revgame.Transcript, backSteps, replay int) (pastBoard revgame.Board, nextMove revgame.Address) {
+	lastMoves := transcript
+	stepsToRollback := backSteps - replay // replay is negative, so we need '-' to sum.
+	pastBoard = board
+	nextMove = revgame.EmptyAddress
+	for stepsToRollback > 0 && len(lastMoves) > 0 {
+		stepsToRollback--
+		var lastMove revgame.Move
+		lastMove, lastMoves = lastMoves.Pop()
+		a := lastMove.Address()
+		var prevMove revgame.Address
+		if len(lastMoves) == 0 {
+			prevMove = revgame.EmptyAddress
+		} else {
+			prevMove = lastMoves.LastMove().Address()
+		}
+		pastBoard = pastBoard.UndoMove(a, prevMove)
+		nextMove = a
+	}
+	return
+}
 
 func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, transcript revgame.Transcript, backSteps int, player revgame.Disk) (m bots.MessageFromBot, err error) {
 	q := callbackUrl.Query()
@@ -135,28 +167,23 @@ func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.B
 		return
 	}
 
+	pastBoard := board
+
 	if replay == 0 {
 		err = errors.New("Invalid 'a' e.g. 'replay' parameter, should be != 0")
 		return
-	} else if replay < 0 {
-		lastMoves := transcript
-		for replay < 0 && len(lastMoves) > 0 {
-			var lastMove revgame.Move
-			lastMove, lastMoves = lastMoves.Pop()
-			a := lastMove.Address()
-			var prevMove revgame.Address
-			if len(lastMoves) == 0 {
-				prevMove = revgame.EmptyAddress
-			} else {
-				prevMove = lastMoves.LastMove().Address()
-			}
-			board = board.UndoMove(a, prevMove)
+	} else {
+		if replay < 0 {
+			pastBoard, _ = rewind(board, transcript, backSteps, replay)
+		} else if replay > 0 {
+			var nextMove revgame.Address
+			pastBoard, nextMove = rewind(board, transcript, backSteps, 0)
+			nextPlayer := board.NextPlayer()
+			board, err = board.MakeMove(nextPlayer, nextMove)
 		}
-	} else if replay > 0 {
-		//
-		// board, err = board.MakeMove(currentPlayer, x, y)
 	}
-	return renderTelegramMessage(whc, callbackUrl, board, mode, player, transcript, backSteps,"")
+
+	return renderTelegramMessage(whc, callbackUrl, board, pastBoard, mode, player, transcript, backSteps,"")
 }
 
 func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, transcript revgame.Transcript, backSteps int, player revgame.Disk) (m bots.MessageFromBot, err error) {
@@ -176,12 +203,7 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgam
 	possibleMove := ""
 
 	// -- Start[ Make move ]--
-	if mode == revgame.WithAI && player != currentPlayer {
-		a = revgame.SimpleAI{}.GetMove(board, currentPlayer)
-		board, err = board.MakeMove(currentPlayer, a)
-	} else {
-		board, err = board.MakeMove(currentPlayer, a)
-	}
+	board, err = board.MakeMove(currentPlayer, a)
 	// -- End[ Make move ]--
 
 	if err != nil {
@@ -213,10 +235,10 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgam
 		lastMoves = append(lastMoves, byte(a.Index()))
 	}
 
-	return renderTelegramMessage(whc, callbackUrl, board, mode, player, lastMoves, backSteps, possibleMove)
+	return renderTelegramMessage(whc, callbackUrl, board, board, mode, player, lastMoves, backSteps, possibleMove)
 }
 
-func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, player revgame.Disk, lastMoves revgame.Transcript, backSteps int, possibleMove string) (m bots.MessageFromBot, err error) {
+func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, board, pastBoard revgame.Board, mode revgame.Mode, player revgame.Disk, lastMoves revgame.Transcript, backSteps int, possibleMove string) (m bots.MessageFromBot, err error) {
 	q := callbackUrl.Query()
 	lang := q.Get("l")
 	if lang != "" {
@@ -243,13 +265,11 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Boar
 	writeScore := func(p revgame.Disk, disk string, score int) {
 		switch mode {
 		case revgame.SinglePlayer:
-			fmt.Fprintf(text, "%v: %v", disk, score)
-		case revgame.WithAI:
 			var name string
 			if p == player {
 				name = "me"
 			} else {
-				name = "AI"
+				name = emoji.RobotFace
 			}
 			fmt.Fprintf(text, "<code>%v (%v):</code> <b>%v</b>", disk, name, score)
 		case revgame.MultiPlayer:

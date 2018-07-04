@@ -4,6 +4,6 @@ type Mode string
 
 const (
 	SinglePlayer Mode = "s"
-	WithAI Mode = "ai"
+	// WithAI Mode = "ai"
 	MultiPlayer = "m"
 )

@@ -12,8 +12,8 @@ func RegisterPairCommands(router bots.WebhooksRouter) {
 		inlineQueryCommand,
 		placeDiskCommand,
 		newBoardCommand,
-		newBoardSinleplayerCommand,
-		newBoardWithAICommand,
+		newBoardSinglePlayerCommand,
+		// newBoardWithAICommand,
 	})
 
 	pabot.InitPrizarenaInGameBot(revsecrets.PrizarenaGameID, revsecrets.PrizarenaToken, router)

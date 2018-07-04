@@ -81,9 +81,6 @@ func startAction(whc bots.WebhookContext) (m bots.MessageFromBot, err error) {
 			{Text: whc.Translate(revtrans.SinglePlayer), CallbackData: newBoardCallbackData(revgame.SinglePlayer)},
 		},
 		[]tgbotapi.InlineKeyboardButton{
-			{Text: whc.Translate(revtrans.NewPlayWithAI), CallbackData: newBoardCallbackData(revgame.WithAI)},
-		},
-		[]tgbotapi.InlineKeyboardButton{
 			{Text: whc.Translate(revtrans.MultiPlayer), SwitchInlineQuery: &switchInlinePlay},
 		},
 		[]tgbotapi.InlineKeyboardButton{

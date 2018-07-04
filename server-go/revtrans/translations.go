@@ -76,13 +76,13 @@ TODO: Описать правила кратко или дать ссылку.
 `,
 	},
 	SinglePlayer: {
-		"en-US": emoji.Dagger + " Single-player (practice)",
-		"ru-RU": emoji.Dagger + " Играть одному (тренировка)",
+		"en-US": emoji.RobotFace + " Single-player (AI)",
+		"ru-RU": emoji.RobotFace + " Играть одному (ИИ)",
 	},
-	NewPlayWithAI: {
-		"en-US": emoji.RobotFace + " Play against AI",
-		"ru-RU": emoji.RobotFace + " Играть против компьютера",
-	},
+	// NewPlayWithAI: {
+	// 	"en-US": emoji.RobotFace + " Play against AI",
+	// 	"ru-RU": emoji.RobotFace + " Играть против компьютера",
+	// },
 	MultiPlayer: {
 		"en-US": emoji.CrossedSwords + " Multi-player",
 		"ru-RU": emoji.CrossedSwords + " Играть с противником",
