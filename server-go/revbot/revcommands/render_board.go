@@ -147,12 +147,7 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Boar
 	return text.String()
 }
 
-func renderReversiTgKeyboard(board, pastBoard revgame.Board, mode revgame.Mode, isCompleted bool, lastMoves revgame.Transcript, backSteps int, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
-	// switch nextDisk {
-	// case revgame.Black, revgame.White: // OK
-	// default:
-	// 	panic("unexpected nextDisk=" + string(nextDisk))
-	// }
+func renderReversiTgKeyboard(board, pastBoard revgame.Board, a revgame.Address, mode revgame.Mode, isCompleted bool, lastMoves revgame.Transcript, backSteps int, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
 	if pastBoard.IsEmpty() {
 		pastBoard = board
 	}
@@ -162,8 +157,6 @@ func renderReversiTgKeyboard(board, pastBoard revgame.Board, mode revgame.Mode, 
 		switch mode {
 		case revgame.SinglePlayer:
 			playAgainCallbackData.WriteString(newBoardSinglePlayerCommandCode + "?")
-		// case revgame.WithAI:
-		// 	playAgainCallbackData.WriteString(newBoardWithAICommandCode + "?p=" + string(player))
 		case revgame.MultiPlayer:
 			playAgainCallbackData.WriteString(newBoardMultiPlayerCommandCode)
 		}
@@ -198,10 +191,13 @@ func renderReversiTgKeyboard(board, pastBoard revgame.Board, mode revgame.Mode, 
 		},
 	}
 
-	getButton := func(x, y int, cell string) tgbotapi.InlineKeyboardButton {
+	getButton := func(x, y int, text string) tgbotapi.InlineKeyboardButton {
 		ca := turnbased.NewCellAddress(x, y)
 		callbackData := getPlaceDiskSinglePlayerCallbackData(board, mode, ca, lastMoves, backSteps, lang, tournamentID)
-		return tgbotapi.NewInlineKeyboardButtonData(cell, callbackData)
+		if a.X == int8(x) && a.Y == int8(y) {
+			text = "(" + text + ")"
+		}
+		return tgbotapi.NewInlineKeyboardButtonData(text, callbackData)
 	}
 
 	for y, row := range rows {
@@ -216,7 +212,7 @@ func renderReversiTgKeyboard(board, pastBoard revgame.Board, mode revgame.Mode, 
 		} else {
 			replayRow := make([]tgbotapi.InlineKeyboardButton, 0, 3)
 
-			if backSteps + 1 < lastMovesCount || pastBoard.Turns() < 5 {
+			if backSteps + 1 < lastMovesCount || (backSteps + 1 == lastMovesCount && pastBoard.Turns() == 1) {
 				backButton := tgbotapi.InlineKeyboardButton{Text: emoji.ReverseButton + " -1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, turnbased.CellAddress("-1"), lastMoves, backSteps, lang, tournamentID)}
 				replayRow = append(replayRow, backButton)
 			}

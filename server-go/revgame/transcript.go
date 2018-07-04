@@ -3,6 +3,7 @@ package revgame
 import (
 	"github.com/pkg/errors"
 	"strings"
+	"github.com/prizarena/turn-based"
 )
 
 type Transcript []byte
@@ -32,6 +33,18 @@ func (t Transcript) ToBase64() string {
 		v[i] = encodeURL[a]
 	}
 	return string(v)
+}
+
+func (t Transcript) String() string {
+	s := make([]byte, len(t)*2)
+	for i, v := range t {
+		a := Move(v).Address()
+		ca := turnbased.NewCellAddress(int(a.X), int(a.Y))
+		j := i*2
+		s[j] = ca[0]
+		s[j+1] = ca[1]
+	}
+	return string(s)
 }
 
 func (t Transcript) Pop() (Move, Transcript) {

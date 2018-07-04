@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/prizarena/turn-based"
+	"github.com/strongo/emoji/go/emoji"
 )
 
 type Disk rune
@@ -152,6 +153,15 @@ func (b Board) Rows(black, white, possibleMove, empty string) (rows [8][8]string
 	return
 }
 
+func (b Board) DrawBoardAsText(possibleMove string) string {
+	return b.DrawBoard("*", "O", possibleMove, "", "\n")
+}
+
+func (b Board) DrawBoardAsEmoji(black, white, possibleMove string) string {
+	return b.DrawBoard(emoji.BlackCircle, emoji.WhiteCircle, ".", "", "\n")
+}
+
+
 func (b Board) DrawBoard(black, white, possibleMove string, colSeparator, rowSeparator string) string {
 	s := new(bytes.Buffer)
 	s.WriteRune('\n')
@@ -171,6 +181,10 @@ func (b Board) DrawBoard(black, white, possibleMove string, colSeparator, rowSep
 
 type Address struct {
 	X, Y int8
+}
+
+func (a Address) ToCellAddress() turnbased.CellAddress {
+	return turnbased.NewCellAddress(int(a.X), int(a.Y))
 }
 
 func (a Address) Index() int8 {

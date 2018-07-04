@@ -24,3 +24,11 @@ func TestTranscript_ToBase64(t *testing.T) {
 		}
 	}
 }
+
+
+func TestTranscript_String(t *testing.T) {
+	transcript := NewTranscript("BK")
+	if s := transcript.String(); s != "B1C2" {
+		t.Errorf("Expected B1C2, got: [%v]", s)
+	}
+}
