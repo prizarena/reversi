@@ -29,11 +29,11 @@ var newBoardSinglePlayerCommand = bots.Command{
 	Code:     newBoardSinglePlayerCommandCode,
 	Commands: []string{"/singleplayer"},
 	Action: func(whc bots.WebhookContext) (m bots.MessageFromBot, err error) {
-		return newPlayAction(whc, "", revgame.SinglePlayer, revgame.Black)
+		return newPlayAction(whc, "", revgame.SinglePlayer)
 	},
 	CallbackAction: func(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
 		tournamentID := callbackUrl.Query().Get("t")
-		return newPlayAction(whc, tournamentID, revgame.SinglePlayer, revgame.Black)
+		return newPlayAction(whc, tournamentID, revgame.SinglePlayer)
 	},
 }
 
@@ -53,11 +53,11 @@ var newBoardSinglePlayerCommand = bots.Command{
 // 	},
 // }
 
-func newPlayAction(whc bots.WebhookContext, tournamentID string, mode revgame.Mode, player revgame.Disk) (m bots.MessageFromBot, err error) {
+func newPlayAction(whc bots.WebhookContext, tournamentID string, mode revgame.Mode) (m bots.MessageFromBot, err error) {
 	var tournament pamodels.Tournament
 	m.Text = getNewPlayText(whc, tournament)
 	m.Format = bots.MessageFormatHTML
-	m.Keyboard = renderReversiTgKeyboard(revgame.OthelloBoard, mode, player, false, revgame.EmptyTranscript(), 0, "", whc.Locale().Code5, tournamentID)
+	m.Keyboard = renderReversiTgKeyboard(revgame.OthelloBoard, revgame.Board{}, mode, false, revgame.EmptyTranscript(), 0, "", whc.Locale().Code5, tournamentID)
 	return
 }
 

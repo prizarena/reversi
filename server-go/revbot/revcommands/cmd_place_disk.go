@@ -14,15 +14,13 @@ import (
 	"strings"
 	"github.com/strongo/log"
 	"github.com/strongo/emoji/go/emoji"
-	"github.com/strongo/app"
-	"fmt"
-	"github.com/prizarena/reversi/server-go/revtrans"
-	"unicode/utf8"
+		"fmt"
+		"unicode/utf8"
 )
 
 const placeDiskCommandCode = "place"
 
-func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode, player revgame.Disk, address turnbased.CellAddress, lastMoves revgame.Transcript, backSteps int, lang, tournamentID string) string {
+func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode, address turnbased.CellAddress, lastMoves revgame.Transcript, backSteps int, lang, tournamentID string) string {
 	s := new(bytes.Buffer)
 	s.WriteString("place?a=" + string(address))
 	if mode != revgame.MultiPlayer {
@@ -76,7 +74,6 @@ var placeDiskCommand = bots.NewCallbackCommand(
 	func(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
 		q := callbackUrl.Query()
 		mode := revgame.Mode(q.Get("m"))
-		var player revgame.Disk // Needed for AI mode only so we can swap sides each turn
 		switch mode {
 		// case revgame.WithAI:
 		// 	player = getPlayerFromString(q.Get("p"))
@@ -120,19 +117,19 @@ var placeDiskCommand = bots.NewCallbackCommand(
 
 		a := q.Get("a")
 		if a == "~" {
-			return aiAction(whc, callbackUrl, board, mode, transcript, backSteps, player)
+			return aiAction(whc, callbackUrl, board, mode, transcript, backSteps)
 		} else {
 			switch a[0] {
 			case '+', '-':
-				return replayAction(whc, callbackUrl, board, mode, transcript, backSteps, player)
+				return replayAction(whc, callbackUrl, board, mode, transcript, backSteps)
 			default:
-				return placeDiskAction(whc, callbackUrl, board, mode, transcript, backSteps, player)
+				return placeDiskAction(whc, callbackUrl, board, mode, transcript, backSteps)
 			}
 		}
 	},
 )
 
-func aiAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, transcript revgame.Transcript, backSteps int, player revgame.Disk) (m bots.MessageFromBot, err error) {
+func aiAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, transcript revgame.Transcript, backSteps int) (m bots.MessageFromBot, err error) {
 	// a = revgame.SimpleAI{}.GetMove(board, currentPlayer)
 	// board, err = board.MakeMove(currentPlayer, a)
 	return
@@ -160,7 +157,7 @@ func rewind(board revgame.Board, transcript revgame.Transcript, backSteps, repla
 	return
 }
 
-func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, transcript revgame.Transcript, backSteps int, player revgame.Disk) (m bots.MessageFromBot, err error) {
+func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, transcript revgame.Transcript, backSteps int) (m bots.MessageFromBot, err error) {
 	q := callbackUrl.Query()
 	var replay int
 	if replay, err = strconv.Atoi(q.Get("a")); err != nil {
@@ -183,10 +180,10 @@ func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.B
 		}
 	}
 
-	return renderTelegramMessage(whc, callbackUrl, board, pastBoard, mode, player, transcript, backSteps,"")
+	return renderTelegramMessage(whc, callbackUrl, board, pastBoard, mode, transcript, backSteps,"")
 }
 
-func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, transcript revgame.Transcript, backSteps int, player revgame.Disk) (m bots.MessageFromBot, err error) {
+func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, transcript revgame.Transcript, backSteps int) (m bots.MessageFromBot, err error) {
 	c := whc.Context()
 	q := callbackUrl.Query()
 	a := revgame.CellAddressToRevAddress(turnbased.CellAddress(q.Get("a")))
@@ -235,10 +232,10 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgam
 		lastMoves = append(lastMoves, byte(a.Index()))
 	}
 
-	return renderTelegramMessage(whc, callbackUrl, board, board, mode, player, lastMoves, backSteps, possibleMove)
+	return renderTelegramMessage(whc, callbackUrl, board, board, mode, lastMoves, backSteps, possibleMove)
 }
 
-func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, board, pastBoard revgame.Board, mode revgame.Mode, player revgame.Disk, lastMoves revgame.Transcript, backSteps int, possibleMove string) (m bots.MessageFromBot, err error) {
+func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, board, pastBoard revgame.Board, mode revgame.Mode, lastMoves revgame.Transcript, backSteps int, possibleMove string) (m bots.MessageFromBot, err error) {
 	q := callbackUrl.Query()
 	lang := q.Get("l")
 	if lang != "" {
@@ -252,46 +249,8 @@ func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, board,
 	m.IsEdit = true
 	m.Format = bots.MessageFormatHTML
 	isCompleted := board.IsCompleted()
-	m.Text = renderReversiBoardText(whc, board, mode, player, isCompleted, nil)
-	m.Keyboard = renderReversiTgKeyboard(board, mode, player, isCompleted, lastMoves, backSteps, possibleMove, lang, tournament.ID)
+	m.Text = renderReversiBoardText(whc, pastBoard, mode, isCompleted, nil)
+	m.Keyboard = renderReversiTgKeyboard(board, pastBoard, mode, isCompleted, lastMoves, backSteps, possibleMove, lang, tournament.ID)
 	return
 }
 
-func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Board, mode revgame.Mode, player revgame.Disk, isCompleted bool, userNames []string) string {
-	text := new(bytes.Buffer)
-	text.WriteString(fmt.Sprintf("<b>%v</b>\n", t.Translate(revtrans.GameCardTitle)))
-	blacksScore, whitesScore := board.Scores()
-	nextMove := board.NextPlayer()
-	writeScore := func(p revgame.Disk, disk string, score int) {
-		switch mode {
-		case revgame.SinglePlayer:
-			var name string
-			if p == player {
-				name = "me"
-			} else {
-				name = emoji.RobotFace
-			}
-			fmt.Fprintf(text, "<code>%v (%v):</code> <b>%v</b>", disk, name, score)
-		case revgame.MultiPlayer:
-			switch p {
-			case revgame.Black, revgame.White:
-				fmt.Fprintf(text, "<code>%v (%v):</code> <b>%v</b>", disk, userNames[0], score)
-			default:
-				panic("unknown player: " + string(p))
-			}
-		default:
-			panic("unknown mode: " + string(mode))
-		}
-
-		if nextMove == p {
-			text.WriteString(" ← next move")
-		}
-		text.WriteString("\n")
-	}
-	writeScore(revgame.Black, emoji.BlackCircle, blacksScore)
-	writeScore(revgame.White, emoji.WhiteCircle, whitesScore)
-	if isCompleted {
-		text.WriteString("Game is completed!\n")
-	}
-	return text.String()
-}

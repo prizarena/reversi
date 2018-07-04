@@ -39,6 +39,10 @@ type Board struct {
 	Last   Address
 }
 
+func (b Board) IsEmpty() bool {
+	return b.Whites == 0 && b.Blacks == 0
+}
+
 func (b Board) Turns() int {
 	return bits.OnesCount64(uint64(b.Blacks)) + bits.OnesCount64(uint64(b.Whites)) - 4
 }
@@ -102,12 +106,12 @@ func (b Board) NextPlayer() Disk {
 		return Completed
 	case Empty:
 		turns := b.Turns()
-		if turns < 10 {
+		if turns < 10 { // TODO: what is max?
 			switch turns % 2 {
 			case 0:
-				return White
-			case 1:
 				return Black
+			case 1:
+				return White
 			}
 		}
 		panic(fmt.Sprintf("can't detect last player as there are more then %v turns", turns))
