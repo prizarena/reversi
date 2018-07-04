@@ -36,7 +36,7 @@ func OtherPlayer(player Disk) Disk {
 type Board struct {
 	Blacks Disks
 	Whites Disks
-	Last   Disk
+	Last   Address
 }
 
 func (b Board) Turns() int {
@@ -44,9 +44,9 @@ func (b Board) Turns() int {
 }
 
 var OthelloBoard = Board{
-	Last:   White,
-	Whites: (1 << (3*8 + 3)) | (1 << (4*8 + 4)),
+	Last:   EmptyAddress,
 	Blacks: (1 << (3*8 + 4)) | (1 << (4*8 + 3)),
+	Whites: (1 << (3*8 + 3)) | (1 << (4*8 + 4)),
 }
 
 func (b Board) flip(a Address) (board Board) {
@@ -84,7 +84,8 @@ func (b Board) flip(a Address) (board Board) {
 }
 
 func (b Board) NextPlayer() Disk {
-	switch b.Last {
+	last := b.disk(b.Last)
+	switch last {
 	case White: // Blacks are making 1st move
 		if b.hasValidMoves(Black) {
 			return Black
@@ -172,6 +173,10 @@ func (a Address) Index() int8 {
 	return a.Y*BoardSize + a.X
 }
 
+func (a Address) ToMove() Move {
+	return Move(a.Index())
+}
+
 var EmptyAddress = Address{-127, -127}
 
 func (a Address) IsOnBoard() bool {
@@ -209,10 +214,10 @@ func (b Board) UndoMove(a, prevMove Address) (board Board) {
 	case White:
 		board.Whites, board.Blacks = board.undoMove(a, board.Whites, board.Blacks)
 	}
-	board.Last = board.disk(prevMove)
-	if board.Last == Empty {
-		board.Last = board.NextPlayer()
-	}
+	board.Last = prevMove
+	// if board.Last == EmptyAddress {
+	// 	board.Last = board.NextPlayer()
+	// }
 	return
 }
 
@@ -264,7 +269,7 @@ func (b Board) MakeMove(player Disk, a Address) (board Board, err error) {
 	for _, diskToFlip := range disksToFlip {
 		board = board.flip(diskToFlip)
 	}
-	board.Last = player
+	board.Last = a
 	return
 }
 

@@ -106,7 +106,7 @@ func renderReversiBoardMessage(c context.Context, t strongo.SingleLocaleTranslat
 	return
 }
 
-func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revgame.Disk, isCompleted bool, lastMoves revgame.Transcript, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
+func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revgame.Disk, isCompleted bool, lastMoves revgame.Transcript, backSteps int, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
 	// switch nextDisk {
 	// case revgame.Black, revgame.White: // OK
 	// default:
@@ -156,7 +156,7 @@ func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revg
 
 	getButton := func(x, y int, cell string) tgbotapi.InlineKeyboardButton {
 		ca := turnbased.NewCellAddress(x, y)
-		callbackData := getPlaceDiskSinglePlayerCallbackData(board, mode, player, ca, lastMoves, lang, tournamentID)
+		callbackData := getPlaceDiskSinglePlayerCallbackData(board, mode, player, ca, lastMoves, backSteps, lang, tournamentID)
 		return tgbotapi.NewInlineKeyboardButtonData(cell, callbackData)
 	}
 
@@ -169,9 +169,9 @@ func renderReversiTgKeyboard(board revgame.Board, mode revgame.Mode, player revg
 	if mode != revgame.MultiPlayer {
 		kb.InlineKeyboard = append(kb.InlineKeyboard, []tgbotapi.InlineKeyboardButton{
 			// {Text: emoji.FastReverseButton + " To start", CallbackData: "replay?to=0"},
-			{Text: emoji.ReverseButton + " -1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, player, turnbased.CellAddress("-1"), lastMoves, lang, tournamentID)},
+			{Text: emoji.ReverseButton + " -1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, player, turnbased.CellAddress("-1"), lastMoves, backSteps, lang, tournamentID)},
 			// {Text: emoji.Megaphone + " Share", CallbackData: "replay?to=-1"},
-			{Text: emoji.PlayButton + " +1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, player, turnbased.CellAddress("+1"), lastMoves, lang, tournamentID)},
+			{Text: emoji.PlayButton + " +1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, player, turnbased.CellAddress("+1"), lastMoves, backSteps, lang, tournamentID)},
 			// {Text: emoji.FastforwardButton + "", CallbackData: "replay?to=end"},
 		})
 	}

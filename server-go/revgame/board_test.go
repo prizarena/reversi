@@ -122,7 +122,7 @@ func TestBoard_UndoMove(t *testing.T) {
 		board = board.UndoMove(a, CellAddressToRevAddress(prevStep.ca))
 		validateBoard(board)
 		if board.Last != prevStep.board.Last {
-			t.Errorf("Invalid undo at step %v: Expected.Last:%v != board.Last:%v", i+1, string(prevStep.board.Last), string(board.Last))
+			t.Errorf("Invalid undo at step %v: Expected.Last:%+v != board.Last:%+v", i+1, prevStep.board.Last, board.Last)
 		}
 		if board != prevStep.board {
 			t.Fatalf("Invalid undo at step %v:\nExpected: %v\n Got: %v",
