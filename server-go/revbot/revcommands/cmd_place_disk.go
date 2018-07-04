@@ -194,6 +194,7 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, a revgame.Ad
 			log.Debugf(c, "Wrong move: %v", cause)
 			m.BotMessage = telegram.CallbackAnswer(tgbotapi.AnswerCallbackQueryConfig{
 				Text: strings.Title(cause.Error()) + ".",
+				ShowAlert: cause == revgame.ErrAlreadyOccupied,
 			})
 			if _, err = whc.Responder().SendMessage(c, m, bots.BotAPISendMessageOverHTTPS); err != nil {
 				log.Errorf(c, err.Error())
@@ -206,12 +207,9 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, a revgame.Ad
 		} else {
 			return
 		}
-		// nextPlayer = currentPlayer
 	} else {
-		// nextPlayer = revgame.OtherPlayer(currentPlayer)
+		transcript, backSteps = revgame.AddMoveToTranscript(transcript, backSteps, a)
 	}
-
-	transcript, backSteps = revgame.AddMoveToTranscript(transcript, backSteps, a)
 
 	return renderTelegramMessage(whc, callbackUrl, currentBoard, currentBoard, a, mode, transcript, backSteps, possibleMove)
 }
