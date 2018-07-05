@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prizarena/turn-based"
 	"github.com/strongo/emoji/go/emoji"
+			"strconv"
 )
 
 type Disk rune
@@ -44,14 +45,36 @@ func (b Board) IsEmpty() bool {
 	return b.Whites == 0 && b.Blacks == 0
 }
 
+func (b Board) DisksCount() int {
+	return bits.OnesCount64(uint64(b.Blacks)) + bits.OnesCount64(uint64(b.Whites))
+}
+
 func (b Board) Turns() int {
-	return bits.OnesCount64(uint64(b.Blacks)) + bits.OnesCount64(uint64(b.Whites)) - 4
+	return b.DisksCount() - 4
 }
 
 var OthelloBoard = Board{
 	Last:   EmptyAddress,
 	Blacks: (1 << (3*8 + 4)) | (1 << (4*8 + 3)),
 	Whites: (1 << (3*8 + 3)) | (1 << (4*8 + 4)),
+}
+
+func (b Board) DisksToString() string {
+	return strconv.FormatInt(int64(b.Blacks), 36) + "_" + strconv.FormatInt(int64(b.Whites), 36)
+}
+
+func NewBoardFromDisksString(s string) (board Board, err error) {
+	i := strings.Index(s, "_")
+	var blacks, whites int64
+	if blacks, err = strconv.ParseInt(s[:i], 36, 64); err != nil {
+		return
+	}
+	if whites, err = strconv.ParseInt(s[i+1:], 36, 64); err != nil {
+		return
+	}
+	board.Blacks = Disks(blacks)
+	board.Whites = Disks(whites)
+	return
 }
 
 func (b Board) flip(a Address) (board Board) {

@@ -133,3 +133,18 @@ func TestBoard_UndoMove(t *testing.T) {
 	}
 }
 
+func TestNewBoardFromBase64(t *testing.T) {
+	board := OthelloBoard
+	s := board.DisksToString()
+	t.Log(s)
+	board2, err := NewBoardFromDisksString(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if board2.Blacks != board.Blacks {
+		t.Errorf("board2.Blacks != board.Blacks")
+	}
+	if board2.Whites != board.Whites {
+		t.Errorf("board2.Whites != board.Whites")
+	}
+}

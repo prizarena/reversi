@@ -227,5 +227,6 @@ func renderReversiTgKeyboard(board, pastBoard revgame.Board, a revgame.Address, 
 			kb.InlineKeyboard = append(kb.InlineKeyboard, replayRow)
 		}
 	}
+
 	return
 }
