@@ -22,38 +22,24 @@ const placeDiskCommandCode = "p"
 func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode, address turnbased.CellAddress, lastMoves revgame.Transcript, backSteps int, lang, tournamentID string) string {
 	s := new(bytes.Buffer)
 	s.WriteString(placeDiskCommandCode + "?a=" + string(address))
-	if mode != revgame.MultiPlayer {
-		s.WriteString("&m=" + string(mode))
-		if turns := board.Turns(); turns > 0 {
-			s.WriteString("&c=" + strconv.Itoa(turns))
-		}
-		// if mode == revgame.WithAI {
-		// 	switch player {
-		// 	case revgame.Black, revgame.White:
-		// 		s.WriteString("&p=" + string(player))
-		// 	default:
-		// 		panic("mode=WithAI has unexpected player: " + string(player))
-		// 	}
-		// }
-	}
 
-	fmt.Fprintf(s, "&b=%v_%v",
+	fmt.Fprintf(s, ".b=%v_%v",
 		strconv.FormatInt(int64(board.Blacks), 36),
 		strconv.FormatInt(int64(board.Whites), 36),
 	)
 	if tournamentID != "" {
-		s.WriteString("&t=" + tournamentID)
+		s.WriteString(".t=" + tournamentID)
 	}
 	if mode == revgame.MultiPlayer && lang != "" {
-		s.WriteString("&l=" + lang)
+		s.WriteString(".l=" + lang)
 	}
 	if mode != revgame.MultiPlayer && len(lastMoves) != 0 {
 		if backSteps > 0 {
-			s.WriteString("&r=" + strconv.Itoa(backSteps))
+			s.WriteString(".r=" + strconv.Itoa(backSteps))
 		}
-		s.WriteString("&h=")
+		s.WriteString(".h=")
 		const limit = 64
-		left := limit - s.Len()
+		left := limit - s.Len() //- strings.Count(s.String(), "&")*5 // \u0026 // TODO: Consider replacing '&' with '.' and then do manual reverse replace in callbackURL
 		if len(lastMoves) > left {
 			lastMoves = lastMoves[len(lastMoves)-left:]
 		}
@@ -65,6 +51,7 @@ func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode
 var placeDiskCommand = bots.NewCallbackCommand(
 	placeDiskCommandCode,
 	func(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
+		callbackUrl.RawQuery = strings.Replace(callbackUrl.RawQuery, ".", "&", -1)
 		q := callbackUrl.Query()
 		mode := revgame.Mode(q.Get("m"))
 		switch mode {
@@ -72,7 +59,11 @@ var placeDiskCommand = bots.NewCallbackCommand(
 		// 	player = getPlayerFromString(q.Get("p"))
 		case revgame.SinglePlayer, revgame.MultiPlayer: // OK
 		case "":
-			mode = revgame.MultiPlayer
+			if callbackUrl.Query().Get("h") != "" {
+				mode = revgame.SinglePlayer
+			} else {
+				mode = revgame.MultiPlayer
+			}
 		default:
 			err = fmt.Errorf("unknown mode: [%v]", mode)
 		}
@@ -188,7 +179,6 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, a revgame.Ad
 	// -- Start[ Make move ]--
 	currentBoard, err = currentBoard.MakeMove(currentPlayer, a)
 	// -- End[ Make move ]--
-
 	if err != nil {
 		if cause := errors.Cause(err); cause == revgame.ErrNotValidMove || cause == revgame.ErrAlreadyOccupied {
 			log.Debugf(c, "Wrong move: %v", cause)

@@ -1,6 +1,9 @@
 package revcommands
 
-import "testing"
+import (
+	"testing"
+	"github.com/prizarena/reversi/server-go/revgame"
+)
 
 func TestSwitch(t *testing.T) {
 	switch "+1"[0] {
@@ -10,3 +13,13 @@ func TestSwitch(t *testing.T) {
 		t.Fatal("Not OK!")
 	}
 }
+
+func TestGetPlaceDiskSinglePlayerCallbackData(t *testing.T) {
+	lastMoves := revgame.NewTranscript("qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM")
+	s := getPlaceDiskSinglePlayerCallbackData(revgame.OthelloBoard, revgame.SinglePlayer, "F5", lastMoves, 2, "ru-RU", "TOUR123" )
+	if len(s) > 64 {
+		t.Errorf("too long, should be < = 64, got: %v", len(s))
+	}
+	t.Log(s)
+}
+p?a=F5&m=s&b=fwopxxc_vmppmo0&t=TOUR123&r=2&h=IOPASDFGHJKLZXCVBNM
