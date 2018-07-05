@@ -33,17 +33,22 @@ func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode
 	if mode == revgame.MultiPlayer && lang != "" {
 		s.WriteString(".l=" + lang)
 	}
-	if mode != revgame.MultiPlayer && len(lastMoves) != 0 {
-		if backSteps > 0 {
-			s.WriteString(".r=" + strconv.Itoa(backSteps))
+	switch mode {
+	case revgame.SinglePlayer:
+		if len(lastMoves) == 0 {
+			s.WriteString(".m=s")
+		} else {
+			if backSteps > 0 {
+				s.WriteString(".r=" + strconv.Itoa(backSteps))
+			}
+			s.WriteString(".h=")
+			const limit = 64
+			left := limit - s.Len() //- strings.Count(s.String(), "&")*5 // \u0026 // TODO: Consider replacing '&' with '.' and then do manual reverse replace in callbackURL
+			if len(lastMoves) > left {
+				lastMoves = lastMoves[len(lastMoves)-left:]
+			}
+			s.WriteString(lastMoves.ToBase64())
 		}
-		s.WriteString(".h=")
-		const limit = 64
-		left := limit - s.Len() //- strings.Count(s.String(), "&")*5 // \u0026 // TODO: Consider replacing '&' with '.' and then do manual reverse replace in callbackURL
-		if len(lastMoves) > left {
-			lastMoves = lastMoves[len(lastMoves)-left:]
-		}
-		s.WriteString(lastMoves.ToBase64())
 	}
 	return s.String()
 }
