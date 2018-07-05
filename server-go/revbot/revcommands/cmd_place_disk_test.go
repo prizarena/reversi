@@ -22,4 +22,3 @@ func TestGetPlaceDiskSinglePlayerCallbackData(t *testing.T) {
 	}
 	t.Log(s)
 }
-p?a=F5&m=s&b=fwopxxc_vmppmo0&t=TOUR123&r=2&h=IOPASDFGHJKLZXCVBNM
