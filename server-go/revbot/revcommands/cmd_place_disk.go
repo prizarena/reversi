@@ -40,7 +40,7 @@ func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode
 			s.WriteString(".m=s")
 		} else {
 			if backSteps > 0 {
-				s.WriteString(".r=" + strconv.Itoa(backSteps))
+				s.WriteString(".r=" + strconv.FormatInt(int64(backSteps), 36))
 			}
 			s.WriteString(".h=")
 			// const limit = 64
@@ -101,44 +101,45 @@ var placeDiskCommand = bots.Command{
 			err = fmt.Errorf("unknown mode: [%v]", mode)
 		}
 
-		var board revgame.Board
+		var p payload
 
-		transcript := revgame.NewTranscript(q.Get("h"))
+		p.transcript = revgame.NewTranscript(q.Get("h"))
 
-		{
-			var b string
-			if len(items) > 1 {
-				b = items[1]
-			}
-			if b == "" {
-				board = revgame.OthelloBoard
-			} else {
-				if board, err = revgame.NewBoardFromDisksString(b); err != nil {
-					return
-				}
-				if len(transcript) > 0 {
-					board.Last = transcript.LastMove().Address()
-				} else {
-					board.Last = revgame.EmptyAddress
-				}
-				if err = revgame.VerifyBoardTranscript(board, transcript); err != nil {
-					return
-				}
-			}
-		}
-
-		var backSteps int
 		if sBackSteps := q.Get("r"); sBackSteps != "" {
-			if backSteps, err = strconv.Atoi(sBackSteps); err != nil {
+			if p.backSteps, err = strconv.Atoi(sBackSteps); err != nil {
 				err = errors.WithMessage(err, "Parameter 'r' is expected to be an integer")
 				return
 			}
 		}
 
+		{ // Get board & current board
+			var b string
+			if len(items) > 1 {
+				b = items[1]
+			}
+			if b == "" {
+				p.board = revgame.OthelloBoard
+			} else {
+				if p.board, err = revgame.NewBoardFromDisksString(b); err != nil {
+					return
+				}
+				if len(p.transcript) > 0 {
+					p.board.Last = p.transcript.LastMove().Address()
+				} else {
+					p.board.Last = revgame.EmptyAddress
+				}
+				if err = revgame.VerifyBoardTranscript(p.board, p.transcript); err != nil {
+					return
+				}
+			}
+			// stepsToReplay := len(p.transcript) - p.backSteps
+			// for _,
+		}
+
 		a := items[0]
 		log.Debugf(whc.Context(), "request.Query[a]=[%v]", a)
 		if a == "~" {
-			return aiAction(whc, callbackUrl, board, mode, transcript, backSteps)
+			return aiAction(whc, callbackUrl, p)
 		} else {
 			switch a[0] {
 			case '+', '-', ' ': // + is replaced with space by URL encoding
@@ -152,56 +153,54 @@ var placeDiskCommand = bots.Command{
 					err = errors.New("Invalid 'a' e.g. 'replay' parameter, should be != 0")
 					return
 				}
-				return replayAction(whc, callbackUrl, board, mode, transcript, backSteps, step)
+				return replayAction(whc, callbackUrl, p, step)
 			default:
 				address := revgame.CellAddressToRevAddress(turnbased.CellAddress(a))
 				if !address.IsOnBoard() {
 					panic(fmt.Sprintf("Invalid adddress parameter {%v}.IsOnBoard() => false: %v", address, a))
 				}
-				return placeDiskAction(whc, callbackUrl, address, board, mode, transcript, backSteps)
+				return placeDiskAction(whc, callbackUrl, p, address)
 			}
 		}
 	},
 }
 
-func aiAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, transcript revgame.Transcript, backSteps int) (m bots.MessageFromBot, err error) {
-	currentBoard := board
-	if backSteps > 0 {
-		currentBoard, _ = revgame.Rewind(currentBoard, transcript, backSteps)
-	}
-	currentPlayer := currentBoard.NextPlayer()
-	a := revgame.SimpleAI{}.GetMove(currentBoard, currentPlayer)
-	currentBoard, err = currentBoard.MakeMove(currentPlayer, a)
-	transcript, backSteps = revgame.AddMoveToTranscript(transcript, backSteps, a)
-	return renderTelegramMessage(whc, callbackUrl, currentBoard, currentBoard, a, mode, transcript, backSteps, "")
+type payload struct {
+	board, currentBoard revgame.Board
+	mode revgame.Mode
+	backSteps int
+	transcript revgame.Transcript
 }
 
-func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, board revgame.Board, mode revgame.Mode, transcript revgame.Transcript, backSteps, step int) (m bots.MessageFromBot, err error) {
-	var currentBoard revgame.Board
+func aiAction(whc bots.WebhookContext, callbackUrl *url.URL, p payload) (m bots.MessageFromBot, err error) {
+	// if backSteps > 0 {
+	// 	currentBoard, _ = revgame.Rewind(currentBoard, transcript, backSteps)
+	// }
+	p.currentBoard = revgame.Replay(p.board, p.transcript, p.backSteps)
+	currentPlayer := p.currentBoard.NextPlayer()
+	a := revgame.SimpleAI{}.GetMove(p.currentBoard, currentPlayer)
+	p.currentBoard, err = p.currentBoard.MakeMove(currentPlayer, a)
+	p.transcript, p.backSteps = revgame.AddMoveToTranscript(p.transcript, p.backSteps, a)
+	return renderTelegramMessage(whc, callbackUrl, p, a, "")
+}
+
+func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, p payload, step int) (m bots.MessageFromBot, err error) {
 	if step == 0 {
 		err = errors.New("replayAction(step == 0)")
 		return
 	}
-	// var a revgame.Address
-	currentBoard, _ = revgame.Rewind(board, transcript, backSteps-step)
-	backSteps -= step
-	// if step < 0 {
-	// 	a = revgame.EmptyAddress
-	// }
-	return renderTelegramMessage(whc, callbackUrl, board, currentBoard, revgame.EmptyAddress, mode, transcript, backSteps, "")
+	p.currentBoard = revgame.Replay(p.board, p.transcript, p.backSteps-step)
+	return renderTelegramMessage(whc, callbackUrl, p, revgame.EmptyAddress, "")
 }
 
-func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, a revgame.Address, board revgame.Board, mode revgame.Mode, transcript revgame.Transcript, backSteps int) (m bots.MessageFromBot, err error) {
+func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, p payload, a revgame.Address) (m bots.MessageFromBot, err error) {
 	c := whc.Context()
 
-	currentBoard := board
+	p.currentBoard = revgame.Replay(p.board, p.transcript, p.backSteps)
 
 	var currentPlayer revgame.Disk
-	if backSteps > 0 {
-		currentBoard, _ = revgame.Rewind(currentBoard, transcript, backSteps)
-	}
 
-	if currentPlayer = currentBoard.NextPlayer(); currentPlayer == revgame.Completed {
+	if currentPlayer = p.currentBoard.NextPlayer(); currentPlayer == revgame.Completed {
 		m.BotMessage = telegram.CallbackAnswer(tgbotapi.AnswerCallbackQueryConfig{
 			Text:      "This game has been completed",
 			ShowAlert: true,
@@ -212,7 +211,7 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, a revgame.Ad
 	possibleMove := ""
 
 	// -- Start[ Make move ]--
-	currentBoard, err = currentBoard.MakeMove(currentPlayer, a)
+	p.currentBoard, err = p.currentBoard.MakeMove(currentPlayer, a)
 	// -- End[ Make move ]--
 	if err != nil {
 		if cause := errors.Cause(err); cause == revgame.ErrNotValidMove || cause == revgame.ErrAlreadyOccupied {
@@ -233,13 +232,13 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, a revgame.Ad
 			return
 		}
 	} else {
-		transcript, backSteps = revgame.AddMoveToTranscript(transcript, backSteps, a)
+		p.transcript, p.backSteps = revgame.AddMoveToTranscript(p.transcript, p.backSteps, a)
 	}
 
-	return renderTelegramMessage(whc, callbackUrl, currentBoard, currentBoard, a, mode, transcript, backSteps, possibleMove)
+	return renderTelegramMessage(whc, callbackUrl, p, a, possibleMove)
 }
 
-func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, board, currentBoard revgame.Board, a revgame.Address, mode revgame.Mode, lastMoves revgame.Transcript, backSteps int, possibleMove string) (m bots.MessageFromBot, err error) {
+func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, p payload, a revgame.Address, possibleMove string) (m bots.MessageFromBot, err error) {
 	q := callbackUrl.Query()
 	lang := q.Get("l")
 	if lang != "" {
@@ -252,9 +251,9 @@ func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, board,
 
 	m.IsEdit = true
 	m.Format = bots.MessageFormatHTML
-	isCompleted := board.IsCompleted()
-	m.Text = renderReversiBoardText(whc, currentBoard, mode, isCompleted, nil)
-	m.Keyboard = renderReversiTgKeyboard(board, currentBoard, a, mode, isCompleted, lastMoves, backSteps, possibleMove, lang, tournament.ID)
+	isCompleted := p.board.IsCompleted()
+	m.Text = renderReversiBoardText(whc, p.currentBoard, p.mode, isCompleted, nil)
+	m.Keyboard = renderReversiTgKeyboard(p.board, p.currentBoard, a, p.mode, isCompleted, p.transcript, p.backSteps, possibleMove, lang, tournament.ID)
 	return
 }
 

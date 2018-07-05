@@ -6,27 +6,39 @@ import (
 	"github.com/pkg/errors"
 )
 
-func Rewind(board Board, transcript Transcript, backSteps int) (currentBoard Board, nextMove Address) {
-	lastMoves := transcript
-	//stepsToRollback := backSteps - replay // replay is negative, so we need '-' to sum.
-	currentBoard = board
-	nextMove = EmptyAddress
-	for backSteps > 0 && (len(lastMoves) > 0 || board.Turns() < 5) {
-		backSteps--
-		var lastMove Move
-		lastMove, lastMoves = lastMoves.Pop()
-		a := lastMove.Address()
-		var prevMove Address
-		if len(lastMoves) == 0 {
-			prevMove = EmptyAddress
-		} else {
-			prevMove = lastMoves.LastMove().Address()
+func Replay(board Board, transcript Transcript, backSteps int) (Board) {
+	var err error
+	for len(transcript) > backSteps {
+		var move Move
+		move, transcript = transcript.Next()
+		if board, err = board.MakeMove(board.NextPlayer(), move.Address()); err != nil {
+			panic(err)
 		}
-		currentBoard = currentBoard.UndoMove(a, prevMove)
-		nextMove = a
 	}
-	return
+	return board
 }
+
+// func Rewind(board Board, transcript Transcript, backSteps int) (currentBoard Board, nextMove Address) {
+// 	lastMoves := transcript
+// 	//stepsToRollback := backSteps - replay // replay is negative, so we need '-' to sum.
+// 	currentBoard = board
+// 	nextMove = EmptyAddress
+// 	for backSteps > 0 && (len(lastMoves) > 0 || board.Turns() < 5) {
+// 		backSteps--
+// 		var lastMove Move
+// 		lastMove, lastMoves = lastMoves.Pop()
+// 		a := lastMove.Address()
+// 		var prevMove Address
+// 		if len(lastMoves) == 0 {
+// 			prevMove = EmptyAddress
+// 		} else {
+// 			prevMove = lastMoves.LastMove().Address()
+// 		}
+// 		currentBoard = currentBoard.UndoMove(a, prevMove)
+// 		nextMove = a
+// 	}
+// 	return
+// }
 
 func AddMoveToTranscript(transcript Transcript, backSteps int, a Address) (Transcript, int) {
 	if backSteps > 0 {

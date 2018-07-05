@@ -8,8 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prizarena/turn-based"
 	"github.com/strongo/emoji/go/emoji"
-			"strconv"
-)
+			)
 
 type Disk rune
 
@@ -60,16 +59,17 @@ var OthelloBoard = Board{
 }
 
 func (b Board) DisksToString() string {
-	return strconv.FormatInt(int64(b.Blacks), 36) + "_" + strconv.FormatInt(int64(b.Whites), 36)
+
+	return EncodeIntToString(int64(b.Blacks)) + "_" + EncodeIntToString(int64(b.Whites))
 }
 
 func NewBoardFromDisksString(s string) (board Board, err error) {
 	i := strings.Index(s, "_")
 	var blacks, whites int64
-	if blacks, err = strconv.ParseInt(s[:i], 36, 64); err != nil {
+	if blacks, err = DecodeStringToInt(s[:i]); err != nil {
 		return
 	}
-	if whites, err = strconv.ParseInt(s[i+1:], 36, 64); err != nil {
+	if whites, err = DecodeStringToInt(s[i+1:]); err != nil {
 		return
 	}
 	board.Blacks = Disks(blacks)
