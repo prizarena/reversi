@@ -194,9 +194,9 @@ func renderReversiTgKeyboard(board, pastBoard revgame.Board, a revgame.Address, 
 	getButton := func(x, y int, text string) tgbotapi.InlineKeyboardButton {
 		ca := turnbased.NewCellAddress(x, y)
 		callbackData := getPlaceDiskSinglePlayerCallbackData(board, mode, ca, lastMoves, backSteps, lang, tournamentID)
-		if a.X == int8(x) && a.Y == int8(y) {
-			text = "(" + text + ")"
-		}
+		// if a.X == int8(x) && a.Y == int8(y) {
+		// 	text = "(" + text + ")"
+		// }
 		return tgbotapi.NewInlineKeyboardButtonData(text, callbackData)
 	}
 
