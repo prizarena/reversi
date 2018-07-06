@@ -19,39 +19,31 @@ import (
 
 const placeDiskCommandCode = "p"
 
-func getPlaceDiskSinglePlayerCallbackData(board revgame.Board, mode revgame.Mode, address turnbased.CellAddress, lastMoves revgame.Transcript, backSteps int, lang, tournamentID string) string {
+func getPlaceDiskSinglePlayerCallbackData(p payload, address turnbased.CellAddress, lang, tournamentID string) string {
 	s := new(bytes.Buffer)
 
 	s.Write([]byte(address))
 	s.WriteRune('.')
-	if board != revgame.OthelloBoard {
-		s.WriteString(board.DisksToString())
+	if p.board.DisksCount() > 4 { // Not optimal to count for every button
+		s.WriteString(p.board.DisksToString())
 	}
 
 	if tournamentID != "" {
 		s.WriteString(".t=" + tournamentID)
 	}
-	if mode == revgame.MultiPlayer && lang != "" {
+	if p.mode == revgame.MultiPlayer && lang != "" {
 		s.WriteString(".l=" + lang)
 	}
-	switch mode {
+	switch p.mode {
 	case revgame.SinglePlayer:
-		if len(lastMoves) == 0 {
+		if len(p.transcript) == 0 {
 			s.WriteString(".m=s")
 		} else {
-			if backSteps > 0 {
-				s.WriteString(".r=" + strconv.FormatInt(int64(backSteps), 36))
+			if p.backSteps > 0 {
+				s.WriteString(".r=" + strconv.FormatInt(int64(p.backSteps), 36))
 			}
 			s.WriteString(".h=")
-			// const limit = 64
-			// left := limit - s.Len() // - strings.Count(s.String(), "&")*5 // \u0026 // TODO: Consider replacing '&' with '.' and then do manual reverse replace in callbackURL
-			// if len(lastMoves) > left {
-			// 	lastMoves = lastMoves[len(lastMoves)-left:]
-			// }
-			if len(lastMoves) > 11 {
-				lastMoves = lastMoves[len(lastMoves)-1-11:]
-			}
-			s.WriteString(lastMoves.ToBase64())
+			s.WriteString(p.transcript.ToBase64())
 		}
 	}
 	return s.String()
@@ -85,31 +77,33 @@ var placeDiskCommand = bots.Command{
 			callbackUrl.RawQuery = strings.Replace(items[2], ".", "&", -1)
 		}
 
+		var p payload
+
 		q := callbackUrl.Query()
-		mode := revgame.Mode(q.Get("m"))
-		switch mode {
+		p.mode = revgame.Mode(q.Get("m"))
+		switch p.mode {
 		// case revgame.WithAI:
 		// 	player = getPlayerFromString(q.Get("p"))
 		case revgame.SinglePlayer, revgame.MultiPlayer: // OK
 		case "":
 			if q.Get("h") != "" {
-				mode = revgame.SinglePlayer
+				p.mode = revgame.SinglePlayer
 			} else {
-				mode = revgame.MultiPlayer
+				p.mode = revgame.MultiPlayer
 			}
 		default:
-			err = fmt.Errorf("unknown mode: [%v]", mode)
+			err = fmt.Errorf("unknown mode: [%v]", p.mode)
 		}
-
-		var p payload
 
 		p.transcript = revgame.NewTranscript(q.Get("h"))
 
 		if sBackSteps := q.Get("r"); sBackSteps != "" {
-			if p.backSteps, err = strconv.Atoi(sBackSteps); err != nil {
-				err = errors.WithMessage(err, "Parameter 'r' is expected to be an integer")
+			var iBackStep int64
+			if iBackStep, err = strconv.ParseInt(sBackSteps, 36, 8); err != nil {
+				err = errors.WithMessage(err, "Parameter 'r' is expected to be a base36 encoded integer")
 				return
 			}
+			p.backSteps = int(iBackStep)
 		}
 
 		{ // Get board & current board
@@ -180,7 +174,7 @@ func aiAction(whc bots.WebhookContext, callbackUrl *url.URL, p payload) (m bots.
 	currentPlayer := p.currentBoard.NextPlayer()
 	a := revgame.SimpleAI{}.GetMove(p.currentBoard, currentPlayer)
 	p.currentBoard, err = p.currentBoard.MakeMove(currentPlayer, a)
-	p.transcript, p.backSteps = revgame.AddMoveToTranscript(p.transcript, p.backSteps, a)
+	p.transcript, p.backSteps = revgame.AddMove(p.transcript, p.backSteps, a)
 	return renderTelegramMessage(whc, callbackUrl, p, a, "")
 }
 
@@ -190,6 +184,7 @@ func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, p payload, step
 		return
 	}
 	p.currentBoard = revgame.Replay(p.board, p.transcript, p.backSteps-step)
+	p.backSteps -= step
 	return renderTelegramMessage(whc, callbackUrl, p, revgame.EmptyAddress, "")
 }
 
@@ -232,7 +227,7 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, p payload, a
 			return
 		}
 	} else {
-		p.transcript, p.backSteps = revgame.AddMoveToTranscript(p.transcript, p.backSteps, a)
+		p.transcript, p.backSteps = revgame.AddMove(p.transcript, p.backSteps, a)
 	}
 
 	return renderTelegramMessage(whc, callbackUrl, p, a, possibleMove)
@@ -249,11 +244,32 @@ func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, p payl
 	var tournament pamodels.Tournament
 	tournament.ID = q.Get("t")
 
+	{ // Slide history window
+		const historyLimit = 11
+		historyLen := len(p.transcript)
+		log.Debugf(whc.Context(), "p.mode: %v, historyLimit: %v, historyLen: %v", p.mode, historyLimit, historyLen)
+		if slideSteps := historyLen - historyLimit; p.mode == revgame.SinglePlayer && slideSteps > 0 {
+			for ; slideSteps > 0; slideSteps-- {
+				var move revgame.Move
+				move, p.transcript = p.transcript.NextMove()
+				player := p.board.NextPlayer()
+				if p.board, err = p.board.MakeMove(player, move.Address()); err != nil {
+					return
+				}
+			}
+			p.backSteps += slideSteps
+		}
+	}
+
+	if err = revgame.VerifyBoardTranscript(p.board, p.transcript); err != nil { // better to cover by unit tests
+		return
+	}
+
 	m.IsEdit = true
 	m.Format = bots.MessageFormatHTML
-	isCompleted := p.board.IsCompleted()
+	isCompleted := p.currentBoard.IsCompleted()
 	m.Text = renderReversiBoardText(whc, p.currentBoard, p.mode, isCompleted, nil)
-	m.Keyboard = renderReversiTgKeyboard(p.board, p.currentBoard, a, p.mode, isCompleted, p.transcript, p.backSteps, possibleMove, lang, tournament.ID)
+	m.Keyboard = renderReversiTgKeyboard(p, a, isCompleted, possibleMove, lang, tournament.ID)
 	return
 }
 

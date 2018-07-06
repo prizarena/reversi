@@ -57,7 +57,12 @@ func newPlayAction(whc bots.WebhookContext, tournamentID string, mode revgame.Mo
 	var tournament pamodels.Tournament
 	m.Text = getNewPlayText(whc, tournament)
 	m.Format = bots.MessageFormatHTML
-	m.Keyboard = renderReversiTgKeyboard(revgame.OthelloBoard, revgame.Board{}, revgame.EmptyAddress, mode, false, revgame.EmptyTranscript(), 0, "", whc.Locale().Code5, tournamentID)
+	p := payload{
+		board: revgame.OthelloBoard,
+		currentBoard: revgame.OthelloBoard,
+		mode: mode,
+	}
+	m.Keyboard = renderReversiTgKeyboard(p, revgame.EmptyAddress, false, "", whc.Locale().Code5, tournamentID)
 	return
 }
 

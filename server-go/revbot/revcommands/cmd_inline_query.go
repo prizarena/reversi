@@ -76,6 +76,12 @@ func inlineQueryPlay(whc bots.WebhookContext, inlineQuery pabot.InlineQueryConte
 				//} else {
 				//	keyboard = getNewPlayTgInlineKbMarkup(lang, tournament.ID, 0)
 				//}
+				p := payload{
+					board: revgame.OthelloBoard,
+					currentBoard: revgame.OthelloBoard,
+					mode: revgame.MultiPlayer,
+					transcript: revgame.EmptyTranscript(),
+				}
 				return tgbotapi.InlineQueryResultArticle{
 					ID:          articleID,
 					Type:        "article",
@@ -86,7 +92,7 @@ func inlineQueryPlay(whc bots.WebhookContext, inlineQuery pabot.InlineQueryConte
 						ParseMode:             "HTML",
 						DisableWebPagePreview: m.DisableWebPagePreview,
 					},
-					ReplyMarkup: renderReversiTgKeyboard(revgame.OthelloBoard, revgame.Board{}, revgame.EmptyAddress, revgame.MultiPlayer, false, revgame.EmptyTranscript(), 0, "", lang, tournament.ID),
+					ReplyMarkup: renderReversiTgKeyboard(p, revgame.EmptyAddress, false, "", lang, tournament.ID),
 				}
 			}
 

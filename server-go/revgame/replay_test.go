@@ -6,7 +6,7 @@ func TestReplay(t *testing.T) {
 	move := Address{5,4}
 	board := OthelloBoard
 	transcript := make(Transcript, 0, 1)
-	transcript, _ = AddMoveToTranscript(transcript, 0, move)
+	transcript, _ = AddMove(transcript, 0, move)
 
 	board = Replay(board, transcript, 1)
 	if board != OthelloBoard {

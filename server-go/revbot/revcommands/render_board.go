@@ -147,14 +147,10 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Boar
 	return text.String()
 }
 
-func renderReversiTgKeyboard(board, pastBoard revgame.Board, a revgame.Address, mode revgame.Mode, isCompleted bool, lastMoves revgame.Transcript, backSteps int, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
-	if pastBoard.IsEmpty() {
-		pastBoard = board
-	}
-
+func renderReversiTgKeyboard(p payload, a revgame.Address, isCompleted bool, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
 	if isCompleted {
 		playAgainCallbackData := new(bytes.Buffer)
-		switch mode {
+		switch p.mode {
 		case revgame.SinglePlayer:
 			playAgainCallbackData.WriteString(newBoardSinglePlayerCommandCode + "?")
 		case revgame.MultiPlayer:
@@ -176,7 +172,7 @@ func renderReversiTgKeyboard(board, pastBoard revgame.Board, a revgame.Address, 
 		return
 	}
 
-	rows := pastBoard.Rows(emoji.BlackCircle, emoji.WhiteCircle, possibleMove, " ")
+	rows := p.currentBoard.Rows(emoji.BlackCircle, emoji.WhiteCircle, possibleMove, " ")
 
 	kb = &tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
@@ -193,7 +189,7 @@ func renderReversiTgKeyboard(board, pastBoard revgame.Board, a revgame.Address, 
 
 	getButton := func(x, y int, text string) tgbotapi.InlineKeyboardButton {
 		ca := turnbased.NewCellAddress(x, y)
-		callbackData := getPlaceDiskSinglePlayerCallbackData(board, mode, ca, lastMoves, backSteps, lang, tournamentID)
+		callbackData := getPlaceDiskSinglePlayerCallbackData(p, ca, lang, tournamentID)
 		// if a.X == int8(x) && a.Y == int8(y) {
 		// 	text = "(" + text + ")"
 		// }
@@ -206,23 +202,32 @@ func renderReversiTgKeyboard(board, pastBoard revgame.Board, a revgame.Address, 
 		}
 	}
 
-	if mode == revgame.SinglePlayer {
-		if lastMovesCount := len(lastMoves); lastMovesCount == 0 {
+	if p.mode == revgame.SinglePlayer {
+		if lastMovesCount := len(p.transcript); lastMovesCount == 0 {
 			// No additional buttons
 		} else {
 			replayRow := make([]tgbotapi.InlineKeyboardButton, 0, 3)
 
-			if backSteps + 1 < lastMovesCount || (backSteps + 1 == lastMovesCount && pastBoard.Turns() == 1) {
-				backButton := tgbotapi.InlineKeyboardButton{Text: emoji.ReverseButton + " -1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, turnbased.CellAddress("-1"), lastMoves, backSteps, lang, tournamentID)}
+			if p.backSteps+1 < lastMovesCount || (p.backSteps+1 == lastMovesCount && p.currentBoard.Turns() == 1) {
+				backButton := tgbotapi.InlineKeyboardButton{
+					Text:         emoji.ReverseButton + " -1 step",
+					CallbackData: getPlaceDiskSinglePlayerCallbackData(p, turnbased.CellAddress("-1"), lang, tournamentID),
+				}
 				replayRow = append(replayRow, backButton)
 			}
 
-			if backSteps > 0 {
-				forwardButton := tgbotapi.InlineKeyboardButton{Text: emoji.PlayButton + " +1 step", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, turnbased.CellAddress("+1"), lastMoves, backSteps, lang, tournamentID)}
+			if p.backSteps > 0 {
+				forwardButton := tgbotapi.InlineKeyboardButton{
+					Text:         emoji.PlayButton + " +1 step",
+					CallbackData: getPlaceDiskSinglePlayerCallbackData(p, turnbased.CellAddress("+1"), lang, tournamentID),
+				}
 				replayRow = append(replayRow, forwardButton)
 			}
 
-			aiButton := tgbotapi.InlineKeyboardButton{Text: emoji.RobotFace + " AI", CallbackData: getPlaceDiskSinglePlayerCallbackData(board, mode, turnbased.CellAddress("~"), lastMoves, backSteps, lang, tournamentID)}
+			aiButton := tgbotapi.InlineKeyboardButton{
+				Text:         emoji.RobotFace + " AI",
+				CallbackData: getPlaceDiskSinglePlayerCallbackData(p, turnbased.CellAddress("~"), lang, tournamentID),
+			}
 			replayRow = append(replayRow, aiButton)
 			kb.InlineKeyboard = append(kb.InlineKeyboard, replayRow)
 		}

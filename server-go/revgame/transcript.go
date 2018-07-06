@@ -54,7 +54,7 @@ func (t Transcript) Pop() (Move, Transcript) {
 	return t.LastMove(), t[:len(t)-1]
 }
 
-func (t Transcript) Next() (Move, Transcript) {
+func (t Transcript) NextMove() (Move, Transcript) {
 	if len(t) == 0 {
 		panic("nothing to pop")
 	}
