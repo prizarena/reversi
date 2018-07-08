@@ -95,7 +95,7 @@ func TestBoard_UndoMove(t *testing.T) {
 		ca turnbased.CellAddress
 		board Board
 	} {
-		{p: ' ', board: OthelloBoard},
+		{p: White, board: OthelloBoard},
 		{p: Black, ca: "F5"},
 		{p: White, ca: "F4"},
 	}
@@ -119,7 +119,7 @@ func TestBoard_UndoMove(t *testing.T) {
 		step := steps[i]
 		a := CellAddressToRevAddress(step.ca)
 		prevStep := steps[i-1]
-		board = board.UndoMove(a, CellAddressToRevAddress(prevStep.ca))
+		board = board.UndoMove(a, prevStep.board.Last)
 		validateBoard(board)
 		if board.Last != prevStep.board.Last {
 			t.Errorf("Invalid undo at step %v: Expected.Last:%+v != board.Last:%+v", i+1, prevStep.board.Last, board.Last)
@@ -135,9 +135,9 @@ func TestBoard_UndoMove(t *testing.T) {
 
 func TestNewBoardFromBase64(t *testing.T) {
 	board := OthelloBoard
-	s := board.DisksToString()
+	s := board.ToBase64()
 	t.Log(s)
-	board2, err := NewBoardFromDisksString(s)
+	board2, err := NewBoardFromBase64(s)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,5 +146,11 @@ func TestNewBoardFromBase64(t *testing.T) {
 	}
 	if board2.Whites != board.Whites {
 		t.Errorf("board2.Whites != board.Whites")
+	}
+}
+
+func TestOthelloBoard(t *testing.T) {
+	if p := OthelloBoard.NextPlayer(); p != Black {
+		t.Fatalf("OthelloBoard expected to return Black  (%v) as NextPlayer(), got: %v", Black, p)
 	}
 }

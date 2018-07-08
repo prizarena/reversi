@@ -8,12 +8,14 @@ import (
 
 func Replay(board Board, transcript Transcript, backSteps int) (Board) {
 	var err error
+	player := board.NextPlayer()
 	for len(transcript) > backSteps {
 		var move Move
 		move, transcript = transcript.NextMove()
-		if board, err = board.MakeMove(board.NextPlayer(), move.Address()); err != nil {
+		if board, err = board.MakeMove(player, move.Address()); err != nil {
 			panic(err)
 		}
+		player = board.NextPlayer()
 	}
 	return board
 }

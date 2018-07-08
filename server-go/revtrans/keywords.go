@@ -16,9 +16,6 @@ const (
 	FindFast                    = "FindFast"
 	ChooseSizeOfNextBoard       = "ChooseSizeOfNextBoard"
 	Tournaments                 = "Tournaments"
-	ChallengeFriendCommandText  = "ChallengeFriendCommandText"
-	SinglePlayerMatchedOne      = "SinglePlayerMatchedOne"
-	SinglePlayerMatchedCount    = "SinglePlayerMatchedCount"
 	Flips                       = "Flips"
 	FlagOfTheDay                = "FalgOfTheDay"
 

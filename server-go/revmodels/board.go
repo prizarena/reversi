@@ -4,44 +4,57 @@ import (
 	"github.com/strongo/db"
 	"github.com/prizarena/turn-based"
 	"github.com/prizarena/reversi/server-go/revgame"
+	"fmt"
 )
 
 const BoardKind = turnbased.BoardKind
 
-type Board struct {
+type RevBoard struct {
 	db.StringID
-	*BoardEntity
+	*RevBoardEntity
 	turnbased.BoardEntityBase
 }
 
-var _ db.EntityHolder = (*Board)(nil)
+var _ db.EntityHolder = (*RevBoard)(nil)
 
-func (Board) Kind() string {
+func (RevBoard) Kind() string {
 	return BoardKind
 }
 
-func (Board) NewEntity() interface{} {
-	return &BoardEntity{}
+func (RevBoard) NewEntity() interface{} {
+	return &RevBoardEntity{}
 }
 
-func (b Board) Entity() interface{} {
-	return b.BoardEntity
+func (b RevBoard) Entity() interface{} {
+	return b.RevBoardEntity
 }
 
-func (b *Board) SetEntity(v interface{})  {
+func (b *RevBoard) SetEntity(v interface{}) {
 	if v == nil {
-		b.BoardEntity = nil
+		b.RevBoardEntity = nil
 	} else {
-		b.BoardEntity = (v).(*BoardEntity)
+		b.RevBoardEntity = (v).(*RevBoardEntity)
 	}
 }
 
-type BoardEntity struct {
-	BoardBlacks int64 `datastore:"bb,noindex,omitempty"` // users[0]
-	BoardWhites int64 `datastore:"bw,noindex,omitempty"` // users[1]
+type RevBoardEntity struct {
+	BoardTurns int    `datastore:"bt,noindex,omitempty"`
+	BoardData  []byte `datastore:"bd,noindex,omitempty"`
 }
 
-func (entity *BoardEntity) SetBoardState(b revgame.Board) {
-	entity.BoardBlacks = int64(b.Blacks)
-	entity.BoardWhites = int64(b.Whites)
+func (entity *RevBoardEntity) SetBoardState(b revgame.Board) {
+	entity.BoardTurns = b.Turns()
+	entity.BoardData = b.ToBytes()
+}
+
+func (entity *RevBoardEntity) GetBoard() (board revgame.Board, err error) {
+	switch len(entity.BoardData) {
+	case 0:
+		board = revgame.OthelloBoard
+	case 17:
+		board = revgame.NewBoardFromBytes(entity.BoardData)
+	default:
+		err = fmt.Errorf("len(*RevBoardEntity.BoardData) expected to be 0 or 17, got: %v", len(entity.BoardData))
+	}
+	return
 }

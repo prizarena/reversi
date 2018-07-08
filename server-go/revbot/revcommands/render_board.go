@@ -147,7 +147,7 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Boar
 	return text.String()
 }
 
-func renderReversiTgKeyboard(p payload, a revgame.Address, isCompleted bool, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
+func renderReversiTgKeyboard(p placeDiskPayload, isCompleted bool, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
 	if isCompleted {
 		playAgainCallbackData := new(bytes.Buffer)
 		switch p.mode {

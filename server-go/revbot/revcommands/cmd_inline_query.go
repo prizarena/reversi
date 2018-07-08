@@ -76,7 +76,7 @@ func inlineQueryPlay(whc bots.WebhookContext, inlineQuery pabot.InlineQueryConte
 				//} else {
 				//	keyboard = getNewPlayTgInlineKbMarkup(lang, tournament.ID, 0)
 				//}
-				p := payload{
+				p := placeDiskPayload{
 					board: revgame.OthelloBoard,
 					currentBoard: revgame.OthelloBoard,
 					mode: revgame.MultiPlayer,
@@ -92,7 +92,7 @@ func inlineQueryPlay(whc bots.WebhookContext, inlineQuery pabot.InlineQueryConte
 						ParseMode:             "HTML",
 						DisableWebPagePreview: m.DisableWebPagePreview,
 					},
-					ReplyMarkup: renderReversiTgKeyboard(p, revgame.EmptyAddress, false, "", lang, tournament.ID),
+					ReplyMarkup: renderReversiTgKeyboard(p, false, "", lang, tournament.ID),
 				}
 			}
 

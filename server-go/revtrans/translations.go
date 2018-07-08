@@ -29,25 +29,13 @@ var TRANS = map[string]map[string]string{
 		"en-US": "<b>Turns</b>: %v",
 		"ru-RU": "<b>Ходов</b>: %v",
 	},
-	SinglePlayerMatchedOne: {
-		"en-US": "<b>Matched</b>: 1 rev",
-		"ru-RU": "<b>Найдено</b>: 1 пара",
-	},
-	SinglePlayerMatchedCount: {
-		"en-US": "<b>Matched</b>: %v",
-		"ru-RU": "<b>Найдено</b>: %v",
-	},
-	ChallengeFriendCommandText: {
-		"en-US": "🤺 Challenge Telegram friend",
-		"ru-RU": "🤺 Новая игра в Telegram",
-	},
 	NewGameInlineTitle: {
-		"en-US": "🀄 Pair matching - new game",
-		"ru-RU": "🀄 Найди пары - новая игра",
+		"en-US": emoji.BlackCircle + emoji.WhiteCircle + " Reversi - new game",
+		"ru-RU": emoji.BlackCircle + emoji.WhiteCircle + " Реверси - новая игра",
 	},
 	NewGameInlineDescription: {
-		"en-US": "Starts new Pair-Matching game",
-		"ru-RU": "Создать новую игру",
+		"en-US": "Starts a new Reversi game",
+		"ru-RU": "Создать новую игру Реверси",
 	},
 	GameCardTitle: {
 		"en-US": "Reversi game",

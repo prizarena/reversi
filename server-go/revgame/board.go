@@ -8,7 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prizarena/turn-based"
 	"github.com/strongo/emoji/go/emoji"
-			)
+	"encoding/binary"
+	"encoding/base64"
+)
 
 type Disk rune
 
@@ -53,27 +55,37 @@ func (b Board) Turns() int {
 }
 
 var OthelloBoard = Board{
-	Last:   EmptyAddress,
+	Last:   Address{4, 4},
 	Blacks: (1 << (3*8 + 4)) | (1 << (4*8 + 3)),
 	Whites: (1 << (3*8 + 3)) | (1 << (4*8 + 4)),
 }
 
-func (b Board) DisksToString() string {
-
-	return EncodeIntToString(int64(b.Blacks)) + "_" + EncodeIntToString(int64(b.Whites))
+func (b Board) ToBytes() []byte {
+	buf := make([]byte, 17)
+	buf[0] = byte(b.Last.Index())
+	binary.LittleEndian.PutUint64(buf[1:9], uint64(b.Blacks))
+	binary.LittleEndian.PutUint64(buf[9:], uint64(b.Whites))
+	return buf
 }
 
-func NewBoardFromDisksString(s string) (board Board, err error) {
-	i := strings.Index(s, "_")
-	var blacks, whites int64
-	if blacks, err = DecodeStringToInt(s[:i]); err != nil {
+func (b Board) ToBase64() string {
+	buf := b.ToBytes()
+	return base64.RawURLEncoding.EncodeToString(buf)
+}
+
+func NewBoardFromBytes(b []byte) (board Board) {
+	board.Last = Move(b[0]).Address()
+	board.Blacks = Disks(binary.LittleEndian.Uint64(b[1:9]))
+	board.Whites = Disks(binary.LittleEndian.Uint64(b[9:]))
+	return
+}
+
+func NewBoardFromBase64(s string) (board Board, err error) {
+	var buf []byte
+	if buf, err = base64.RawURLEncoding.DecodeString(s); err != nil {
 		return
 	}
-	if whites, err = DecodeStringToInt(s[i+1:]); err != nil {
-		return
-	}
-	board.Blacks = Disks(blacks)
-	board.Whites = Disks(whites)
+	board = NewBoardFromBytes(buf)
 	return
 }
 
@@ -442,9 +454,9 @@ func (b Board) Score(player Disk) int {
 }
 
 func CellAddressToRevAddress(ca turnbased.CellAddress) Address {
-	if ca == "" {
-		return EmptyAddress
-	}
+	//if ca == "" {
+	//	return EmptyAddress
+	//}
 	x, y := ca.XY()
 	return Address{X: int8(x), Y: int8(y)}
 }

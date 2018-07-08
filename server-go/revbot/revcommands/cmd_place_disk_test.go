@@ -15,7 +15,7 @@ func TestSwitch(t *testing.T) {
 }
 
 func TestGetPlaceDiskSinglePlayerCallbackData(t *testing.T) {
-	p := payload{
+	p := placeDiskPayload{
 		board: revgame.OthelloBoard,
 		currentBoard: revgame.OthelloBoard,
 		mode: revgame.SinglePlayer,

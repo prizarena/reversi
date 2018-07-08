@@ -35,8 +35,8 @@ var newBoardCommand = bots.NewCallbackCommand(
 			return
 		}
 
-		board := revmodels.Board{
-			BoardEntity: &revmodels.BoardEntity{
+		board := revmodels.RevBoard{
+			RevBoardEntity: &revmodels.RevBoardEntity{
 			},
 		}
 		board.SetBoardState(revgame.OthelloBoard)
