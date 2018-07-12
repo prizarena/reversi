@@ -60,15 +60,14 @@ func inlineQueryPlay(whc bots.WebhookContext, inlineQuery pabot.InlineQueryConte
 
 			// translator := whc.BotAppContext().GetTranslator(c)
 
+			tournamentID := tournament.ShortTournamentID()
+
 			newGameOption := func() tgbotapi.InlineQueryResultArticle {
 				// t := strongo.NewSingleMapTranslator(strongo.LocalesByCode5[lang], translator)
 
 				lang := whc.Locale().Code5
 
-				articleID := "new_game?l=" + lang
-				if tournament.ID != "" {
-					articleID += "&t=" + tournament.ShortTournamentID()
-				}
+				articleID := "new_game/" + lang + "/" + tournamentID
 
 				//var keyboard *tgbotapi.InlineKeyboardMarkup
 				//if tournament.ID == "" {
@@ -92,7 +91,7 @@ func inlineQueryPlay(whc bots.WebhookContext, inlineQuery pabot.InlineQueryConte
 						ParseMode:             "HTML",
 						DisableWebPagePreview: m.DisableWebPagePreview,
 					},
-					ReplyMarkup: renderReversiTgKeyboard(p, false, "", lang, tournament.ID),
+					ReplyMarkup: renderReversiTgKeyboard(p, false, "", lang, tournamentID),
 				}
 			}
 

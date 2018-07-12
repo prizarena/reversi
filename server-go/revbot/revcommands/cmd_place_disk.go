@@ -9,12 +9,16 @@ import (
 	"strconv"
 	"github.com/pkg/errors"
 	"github.com/prizarena/prizarena-public/pamodels"
-	"github.com/strongo/bots-api-telegram"
-	"github.com/strongo/bots-framework/platforms/telegram"
 	"strings"
 	"github.com/strongo/log"
-	"github.com/strongo/emoji/go/emoji"
 	"fmt"
+	"github.com/prizarena/reversi/server-go/revdal"
+	"context"
+	"github.com/strongo/db"
+	"github.com/prizarena/reversi/server-go/revmodels"
+	"github.com/strongo/bots-framework/platforms/telegram"
+	"github.com/strongo/bots-api-telegram"
+	"github.com/strongo/emoji/go/emoji"
 )
 
 const placeDiskCommandCode = "p"
@@ -73,9 +77,9 @@ var placeDiskCommand = bots.Command{
 
 type placeDiskPayload struct {
 	board, currentBoard revgame.Board
-	mode revgame.Mode
-	backSteps int
-	transcript revgame.Transcript
+	mode                revgame.Mode
+	backSteps           int
+	transcript          revgame.Transcript
 }
 
 func placeDiskCallbackAction(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
@@ -116,7 +120,7 @@ func placeDiskCallbackAction(whc bots.WebhookContext, callbackUrl *url.URL) (m b
 		p.backSteps = int(iBackStep)
 	}
 
-	{ // Get board & current board
+	if p.mode == revgame.SinglePlayer { // Get board & current board
 		var b string
 		if len(items) > 1 {
 			b = items[1]
@@ -184,9 +188,60 @@ func replayAction(whc bots.WebhookContext, callbackUrl *url.URL, p placeDiskPayl
 }
 
 func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, p placeDiskPayload, a revgame.Address) (m bots.MessageFromBot, err error) {
-	c := whc.Context()
+	switch p.mode {
+	case revgame.SinglePlayer:
+		return placeDiskSinglePlayer(whc, callbackUrl, p, a)
+	case revgame.MultiPlayer:
+		return placeDiskMultiPlayer(whc, callbackUrl, p, a)
+	default:
+		panic("unknown mode")
+	}
+}
 
+func placeDiskSinglePlayer(whc bots.WebhookContext, callbackUrl *url.URL, p placeDiskPayload, a revgame.Address) (m bots.MessageFromBot, err error) {
 	p.currentBoard = revgame.Replay(p.board, p.transcript, p.backSteps)
+
+	if m, err = placeDiskToBoard(whc, callbackUrl, p, a); err != nil {
+		return
+	}
+	return
+}
+
+func placeDiskMultiPlayer(whc bots.WebhookContext, callbackUrl *url.URL, p placeDiskPayload, a revgame.Address) (m bots.MessageFromBot, err error) {
+	c := whc.Context()
+	var boardEH revmodels.RevBoard
+	if boardEH.ID, err = turnbased.GetBoardID(whc.Input(), callbackUrl.Query().Get("b")); err != nil {
+		return
+	}
+	err = revdal.DB.RunInTransaction(c, func(c context.Context) (err error) {
+		if err = revdal.DB.Get(c, &boardEH); err != nil {
+			if db.IsNotFound(err) {
+				p.currentBoard = revgame.OthelloBoard
+			} else {
+				return
+			}
+		} else if p.currentBoard, err = boardEH.GetBoard(); err != nil {
+			return
+		}
+
+		p.board = p.currentBoard
+
+		if m, err = placeDiskToBoard(whc, callbackUrl, p, a); err != nil {
+			return
+		}
+
+		boardEH.SetBoardState(p.currentBoard)
+
+		if err = revdal.DB.Update(c, &boardEH); err != nil {
+			return
+		}
+		return
+	}, db.SingleGroupTransaction)
+	return
+}
+
+func placeDiskToBoard(whc bots.WebhookContext, callbackUrl *url.URL, p placeDiskPayload, a revgame.Address) (m bots.MessageFromBot, err error) {
+	c := whc.Context()
 
 	var currentPlayer revgame.Disk
 

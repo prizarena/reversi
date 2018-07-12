@@ -15,7 +15,7 @@ import (
 	"github.com/prizarena/reversi/server-go/revtrans"
 )
 
-func renderReversiBoardMessage(c context.Context, t strongo.SingleLocaleTranslator, tournament pamodels.Tournament, board revmodels.Board, matchedTile, userID string) (m bots.MessageFromBot, err error) {
+func renderReversiBoardMessage(c context.Context, t strongo.SingleLocaleTranslator, tournament pamodels.Tournament, board revmodels.RevBoard, matchedTile, userID string) (m bots.MessageFromBot, err error) {
 	// isCompleted := board.IsCompleted(players)
 	// log.Debugf(c, "renderPairsBoardMessage(): isCompleted=%v", isCompleted)
 	// lang := t.Locale().Code5

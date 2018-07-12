@@ -12,7 +12,6 @@ const BoardKind = turnbased.BoardKind
 type RevBoard struct {
 	db.StringID
 	*RevBoardEntity
-	turnbased.BoardEntityBase
 }
 
 var _ db.EntityHolder = (*RevBoard)(nil)
@@ -38,8 +37,10 @@ func (b *RevBoard) SetEntity(v interface{}) {
 }
 
 type RevBoardEntity struct {
-	BoardTurns int    `datastore:"bt,noindex,omitempty"`
-	BoardData  []byte `datastore:"bd,noindex,omitempty"`
+	turnbased.BoardEntityBase
+	BoardTurns   int    `datastore:"bt,noindex,omitempty"`
+	BoardData    []byte `datastore:"bd,noindex,omitempty"`
+	BoardHistory string `datastore:"bh,noindex,omitempty"`
 }
 
 func (entity *RevBoardEntity) SetBoardState(b revgame.Board) {
