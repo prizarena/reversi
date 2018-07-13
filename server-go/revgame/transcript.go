@@ -2,8 +2,9 @@ package revgame
 
 import (
 	"github.com/pkg/errors"
-	"strings"
-	"github.com/prizarena/turn-based"
+		"github.com/prizarena/turn-based"
+	"bytes"
+	"fmt"
 )
 
 type Transcript []byte
@@ -14,15 +15,19 @@ func EmptyTranscript() Transcript{
 	return Transcript([]byte{})
 }
 
-const encodeURL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+var encodeURL = []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
 
 func NewTranscript(s string) (transcript Transcript) {
 	if len(s) == 0 {
 		return
 	}
 	transcript = make(Transcript, len(s))
-	for i, v := range []byte(s) {
-		transcript[i] = byte(strings.Index(encodeURL, string(v)))
+	for i, b := range []byte(s) {
+		if v := bytes.IndexByte(encodeURL, b); v < 0 {
+			panic(fmt.Sprintf("unkonw transcript code: " + string(v)))
+		} else {
+			transcript[i] = byte(v)
+		}
 	}
 	return
 }

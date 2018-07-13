@@ -101,7 +101,7 @@ var newBoardCommand = bots.NewCallbackCommand(
 		// 	}
 		// 	// if !slices.IsInStringSlice(userID, board.UserIDs) {
 		// 	// 	changed = true
-		// 	// 	board.AddUser(userID, botAppUser.(*revmodels.UserEntity).FullName())
+		// 	// 	board.AddUser(userID, botAppUser.(*revmodels.UserEntity).GetFullName())
 		// 	// }
 		// 	if changed {
 		// 		if err = revdal.DB.Update(tc, &board); err != nil {

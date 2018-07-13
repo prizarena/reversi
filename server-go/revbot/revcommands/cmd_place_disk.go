@@ -19,6 +19,7 @@ import (
 	"github.com/strongo/bots-framework/platforms/telegram"
 	"github.com/strongo/bots-api-telegram"
 	"github.com/strongo/emoji/go/emoji"
+	"github.com/strongo/slices"
 )
 
 const placeDiskCommandCode = "p"
@@ -76,6 +77,9 @@ var placeDiskCommand = bots.Command{
 }
 
 type placeDiskPayload struct {
+	userID, userName    string
+	userNames           []string
+	isNewUser           bool
 	board, currentBoard revgame.Board
 	mode                revgame.Mode
 	backSteps           int
@@ -95,6 +99,7 @@ func placeDiskCallbackAction(whc bots.WebhookContext, callbackUrl *url.URL) (m b
 
 	q := callbackUrl.Query()
 	p.mode = revgame.Mode(q.Get("m"))
+	p.userID = whc.AppUserStrID()
 	switch p.mode {
 	// case revgame.WithAI:
 	// 	player = getPlayerFromString(q.Get("p"))
@@ -213,9 +218,14 @@ func placeDiskMultiPlayer(whc bots.WebhookContext, callbackUrl *url.URL, p place
 	if boardEH.ID, err = turnbased.GetBoardID(whc.Input(), callbackUrl.Query().Get("b")); err != nil {
 		return
 	}
+
 	err = revdal.DB.RunInTransaction(c, func(c context.Context) (err error) {
 		if err = revdal.DB.Get(c, &boardEH); err != nil {
 			if db.IsNotFound(err) {
+				log.Debugf(c, "New board entity")
+				boardEH.RevBoardEntity = &revmodels.RevBoardEntity{
+					BoardEntityBase: turnbased.BoardEntityBase{Lang: whc.Locale().Code5, Round: 1},
+				}
 				p.currentBoard = revgame.OthelloBoard
 			} else {
 				return
@@ -223,14 +233,30 @@ func placeDiskMultiPlayer(whc bots.WebhookContext, callbackUrl *url.URL, p place
 		} else if p.currentBoard, err = boardEH.GetBoard(); err != nil {
 			return
 		}
+		p.board = p.currentBoard // In multi-player we do not have rollback steps, so always "board == currentBoard"
 
-		p.board = p.currentBoard
+		p.isNewUser = !slices.IsInStringSlice(p.userID, boardEH.UserIDs)
+		if p.isNewUser {
+			if appUserEntity, err := whc.GetAppUser(); err != nil {
+				return err
+			} else {
+				p.userName = appUserEntity.(*revmodels.UserEntity).GetFullName()
+				boardEH.UserIDs = append(boardEH.UserIDs, p.userID)
+				boardEH.UserNames = append(boardEH.UserNames, p.userName)
+			}
+		} else {
+			p.userName = boardEH.GetUserName(p.userID)
+		}
+
+		p.userNames = boardEH.UserNames
 
 		if m, err = placeDiskToBoard(whc, callbackUrl, p, a); err != nil {
 			return
 		}
 
 		boardEH.SetBoardState(p.currentBoard)
+		transcript, _ := revgame.AddMove(revgame.NewTranscript(boardEH.BoardHistory), 0, a)
+		boardEH.BoardHistory = transcript.ToBase64()
 
 		if err = revdal.DB.Update(c, &boardEH); err != nil {
 			return
@@ -318,7 +344,7 @@ func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, p plac
 	m.IsEdit = true
 	m.Format = bots.MessageFormatHTML
 	isCompleted := p.currentBoard.IsCompleted()
-	m.Text = renderReversiBoardText(whc, p.currentBoard, p.mode, isCompleted, nil)
+	m.Text = renderReversiBoardText(whc, p.currentBoard, p.mode, isCompleted, p.userNames)
 	m.Keyboard = renderReversiTgKeyboard(p, isCompleted, possibleMove, lang, tournament.ID)
 	return
 }
