@@ -71,6 +71,7 @@ func startAction(whc bots.WebhookContext) (m bots.MessageFromBot, err error) {
 	}
 	m.Text = whc.Translate(revtrans.OnStartWelcome)
 	m.Format = bots.MessageFormatHTML
+	m.DisableWebPagePreview = true
 	switchInlinePlay := whc.Locale().Code5[:2]
 	m.Keyboard = tgbotapi.NewInlineKeyboardMarkup(
 		[]tgbotapi.InlineKeyboardButton{

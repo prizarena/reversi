@@ -42,25 +42,25 @@ var TRANS = map[string]map[string]string{
 		"ru-RU": "Игра: Реверси",
 	},
 	OnStartWelcome: {
-		"en-US": `🀄 <b>Reversi game</b>
+		"en-US": `🀄 <b>Reversi</b> game
 
-TODO: short rules or a link. 
+It has very simple <a href="https://en.wikipedia.org/wiki/Reversi#Rules">rules</a>.  
 
-🤺 You can practice alone or play in race mode against friends. 
+🤺 You can practice alone or play against friends. 
 
 🏆 Create tournaments for your friends or subscribers of your channel.
 
-💵 From time to time there are <b>free to play</b> sponsored tournaments with cash prizes! 
+💵 From time to time there are <b>free to play</b> sponsored tournaments with cash prizes! You can get notified about such tournaments by subscribing to @prizarena channel."
 `,
-		"ru-RU": `🀄 <b>Игра: Реверси</b>
+		"ru-RU": `🀄 <b>Игра</b>: Реверси
 
-TODO: Описать правила кратко или дать ссылку.
+<a href="https://ru.wikipedia.org/wiki/%D0%A0%D0%B5%D0%B2%D0%B5%D1%80%D1%81%D0%B8#%D0%9F%D1%80%D0%B0%D0%B2%D0%B8%D0%BB%D0%B0">Правила</a> очень просты. 
 
-🤺 Играть можно одному или на перегонки с друзьями.
+🤺 Играть можно одному или с друзьями.
 
 🏆 Проводите турниры среди друзей или подписчиков своего канала. 
 
-💵 Иногда проводятся спонсорские турниры с <b>бесплатным участием</b> и денежными призами!
+💵 Иногда проводятся спонсорские турниры с <b>бесплатным участием</b> и денежными призами! Узнать о таких турнирах можно подписавшись на канал @prizarena.
 `,
 	},
 	SinglePlayer: {
