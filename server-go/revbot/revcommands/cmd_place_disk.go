@@ -205,8 +205,7 @@ func placeDiskAction(whc bots.WebhookContext, callbackUrl *url.URL, p placeDiskP
 
 func placeDiskSinglePlayer(whc bots.WebhookContext, callbackUrl *url.URL, p placeDiskPayload, a revgame.Address) (m bots.MessageFromBot, err error) {
 	p.currentBoard = revgame.Replay(p.board, p.transcript, p.backSteps)
-
-	if m, err = placeDiskToBoard(whc, callbackUrl, p, a); err != nil {
+	if _, m, err = placeDiskToBoard(whc, callbackUrl, &p, a); err != nil {
 		return
 	}
 	return
@@ -237,6 +236,12 @@ func placeDiskMultiPlayer(whc bots.WebhookContext, callbackUrl *url.URL, p place
 
 		p.isNewUser = !slices.IsInStringSlice(p.userID, boardEH.UserIDs)
 		if p.isNewUser {
+			if len(boardEH.UserIDs) >= 2 { // Attempt to join as 3d user
+				m.BotMessage = telegram.CallbackAnswer(tgbotapi.AnswerCallbackQueryConfig{
+					Text: "This board already have 2 players",
+				})
+				return
+			}
 			if appUserEntity, err := whc.GetAppUser(); err != nil {
 				return err
 			} else {
@@ -244,29 +249,54 @@ func placeDiskMultiPlayer(whc bots.WebhookContext, callbackUrl *url.URL, p place
 				boardEH.UserIDs = append(boardEH.UserIDs, p.userID)
 				boardEH.UserNames = append(boardEH.UserNames, p.userName)
 			}
-		} else {
+		} else { // Existing user already belongs to the board
+
+			// Check it is user's turn
+			var isUserTurn bool
+			switch p.currentBoard.NextPlayer() {
+			case revgame.Black:
+				isUserTurn = len(boardEH.UserIDs) > 0 && boardEH.UserIDs[0] == p.userID
+			case revgame.White:
+				isUserTurn = len(boardEH.UserIDs) > 1 && boardEH.UserIDs[1] == p.userID
+			}
+			if !isUserTurn {
+				m.BotMessage = telegram.CallbackAnswer(tgbotapi.AnswerCallbackQueryConfig{
+					Text: "You already made your move, wait for other player to respond.",
+				})
+				return
+			}
+
 			p.userName = boardEH.GetUserName(p.userID)
 		}
 
 		p.userNames = boardEH.UserNames
 
-		if m, err = placeDiskToBoard(whc, callbackUrl, p, a); err != nil {
+		var isPlaced bool
+		prevBoardState := p.currentBoard
+		if isPlaced, m, err = placeDiskToBoard(whc, callbackUrl, &p, a); err != nil {
 			return
 		}
 
-		boardEH.SetBoardState(p.currentBoard)
-		transcript, _ := revgame.AddMove(revgame.NewTranscript(boardEH.BoardHistory), 0, a)
-		boardEH.BoardHistory = transcript.ToBase64()
-
-		if err = revdal.DB.Update(c, &boardEH); err != nil {
+		if isPlaced && prevBoardState == p.currentBoard {
+			err = errors.New("game logic failure: isPlaced && prevBoardState == p.currentBoard")
 			return
+		}
+
+		if isPlaced {
+			boardEH.SetBoardState(p.currentBoard)
+			transcript, _ := revgame.AddMove(revgame.NewTranscript(boardEH.BoardHistory), 0, a)
+			boardEH.BoardHistory = transcript.ToBase64()
+
+			if err = revdal.DB.Update(c, &boardEH); err != nil {
+				return
+			}
 		}
 		return
 	}, db.SingleGroupTransaction)
 	return
 }
 
-func placeDiskToBoard(whc bots.WebhookContext, callbackUrl *url.URL, p placeDiskPayload, a revgame.Address) (m bots.MessageFromBot, err error) {
+func placeDiskToBoard(whc bots.WebhookContext, callbackUrl *url.URL, p *placeDiskPayload, a revgame.Address) (isPlaced bool, m bots.MessageFromBot, err error) {
 	c := whc.Context()
 
 	var currentPlayer revgame.Disk
@@ -303,10 +333,12 @@ func placeDiskToBoard(whc bots.WebhookContext, callbackUrl *url.URL, p placeDisk
 			return
 		}
 	} else {
+		isPlaced = true
 		p.transcript, p.backSteps = revgame.AddMove(p.transcript, p.backSteps, a)
 	}
 
-	return renderTelegramMessage(whc, callbackUrl, p, possibleMove)
+	m, err = renderTelegramMessage(whc, callbackUrl, *p, possibleMove)
+	return
 }
 
 func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, p placeDiskPayload, possibleMove string) (m bots.MessageFromBot, err error) {

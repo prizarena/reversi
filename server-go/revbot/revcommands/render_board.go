@@ -122,7 +122,7 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Boar
 			} else {
 				name = emoji.RobotFace
 			}
-			fmt.Fprintf(text, "<code>%v (%v):</code> <b>%v</b>", disk, name, score)
+			fmt.Fprintf(text, "%v (%v): <b>%v</b>", disk, name, score)
 		case revgame.MultiPlayer:
 			var userName string
 			switch p {
@@ -132,20 +132,20 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Boar
 				if len(userNames) > 1 {
 					userName = userNames[1]
 				} else {
-					fmt.Fprintf(text, "<code>%v %v</code>", disk, "awaiting 2nd player to join")
+					userName = "<i>not joined yet</i>"
 				}
 			default:
 				panic("unknown player: " + string(p))
 			}
 			if userName != "" {
-				fmt.Fprintf(text, "<code>%v (%v):</code> <b>%v</b>", disk, userName, score)
+				fmt.Fprintf(text, "%v %v: <b>%v</b>", disk, userName, score)
 			}
 		default:
 			panic("unknown mode: " + string(mode))
 		}
 
 		if nextMove == p {
-			text.WriteString(" ← next move")
+			text.WriteString(" <code>← next move</code>")
 		}
 		text.WriteString("\n")
 	}
