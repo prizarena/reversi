@@ -6,7 +6,7 @@ import (
 				"github.com/prizarena/reversi/server-go/revsecrets"
 )
 
-func RegisterPairCommands(router bots.WebhooksRouter) {
+func RegisterRevCommands(router bots.WebhooksRouter) {
 	router.RegisterCommands([]bots.Command{
 		startCommand,
 		inlineQueryCommand,

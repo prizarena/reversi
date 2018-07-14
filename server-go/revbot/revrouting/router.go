@@ -11,5 +11,5 @@ var WebhooksRouter = bots.NewWebhookRouter(
 )
 
 func init() {
-	revcommands.RegisterPairCommands(WebhooksRouter)
+	revcommands.RegisterRevCommands(WebhooksRouter)
 }

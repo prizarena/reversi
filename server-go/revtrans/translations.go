@@ -50,8 +50,7 @@ It has very simple <a href="https://en.wikipedia.org/wiki/Reversi#Rules">rules</
 
 🏆 Create tournaments for your friends or subscribers of your channel.
 
-💵 From time to time there are <b>free to play</b> sponsored tournaments with cash prizes! You can get notified about such tournaments by subscribing to @prizarena channel."
-`,
+💵 From time to time there are <b>free to play</b> sponsored tournaments with cash prizes! You can get notified about such tournaments by subscribing to @prizarena channel.`,
 		"ru-RU": `🀄 <b>Игра</b>: Реверси
 
 <a href="https://ru.wikipedia.org/wiki/%D0%A0%D0%B5%D0%B2%D0%B5%D1%80%D1%81%D0%B8#%D0%9F%D1%80%D0%B0%D0%B2%D0%B8%D0%BB%D0%B0">Правила</a> очень просты. 
@@ -60,20 +59,43 @@ It has very simple <a href="https://en.wikipedia.org/wiki/Reversi#Rules">rules</
 
 🏆 Проводите турниры среди друзей или подписчиков своего канала. 
 
-💵 Иногда проводятся спонсорские турниры с <b>бесплатным участием</b> и денежными призами! Узнать о таких турнирах можно подписавшись на канал @prizarena.
-`,
-	},
-	SinglePlayer: {
-		"en-US": emoji.RobotFace + " Single-player (AI)",
-		"ru-RU": emoji.RobotFace + " Играть одному (ИИ)",
-	},
-	// NewPlayWithAI: {
-	// 	"en-US": emoji.RobotFace + " Play against AI",
-	// 	"ru-RU": emoji.RobotFace + " Играть против компьютера",
-	// },
-	MultiPlayer: {
-		"en-US": emoji.CrossedSwords + " Multi-player",
-		"ru-RU": emoji.CrossedSwords + " Играть с противником",
+💵 Иногда проводятся спонсорские турниры с <b>бесплатным участием</b> и денежными призами! Узнать о таких турнирах можно подписавшись на канал @prizarena.`,
+		"fr-FR": `🀄 <b> Reversi </b> jeu
+
+Il a des <a href="https://en.wikipedia.org/wiki/Reversi#Rules">règles très simples</a>.
+
+🤺 Vous pouvez pratiquer seul ou jouer contre des amis.
+
+🏆 Créez des tournois pour vos amis ou abonnés de votre chaîne.
+
+💵 De temps en temps, il y a des <b>tournois gratuits </b> sponsorisés avec des prix en argent! Vous pouvez être averti de ces tournois en vous abonnant à la chaîne @prizarena.`,
+		"es-ES": `🀄 <b>Reversi</b> juego
+
+Tiene <a href="https://en.wikipedia.org/wiki/Reversi#Rules">reglas</a> muy simples.
+
+🤺 Puedes practicar solo o jugar contra amigos.
+
+🏆 Crea torneos para tus amigos o suscriptores de tu canal.
+
+💵 De vez en cuando hay torneos patrocinados <b>gratis</b> con premios en efectivo. Puede recibir notificaciones sobre dichos torneos suscribiéndose al canal @prizarena.`,
+		"de-DE": `🀄 <b>Reversi </b> Spiel
+
+Es hat sehr einfache <a href="https://de.wikipedia.org/wiki/Reversi#Rules">Regeln</a>.
+
+🤺 Du kannst alleine trainieren oder gegen Freunde spielen.
+
+🏆 Erstelle Turniere für deine Freunde oder Abonnenten deines Kanals.
+
+💵 Von Zeit zu Zeit gibt es <b>kostenlose</b> gesponserte Turniere mit Geldpreisen! Sie können über solche Turniere benachrichtigt werden, indem Sie @prizarena Kanal abonnieren.`,
+		"fa-IR": `🀄 <b> بازی Reversi </b>
+
+این <a href="https://en.wikipedia.org/wiki/Reversi#Rules"> قوانین </a> بسیار ساده است.
+
+🤺 شما می توانید به تنهایی تمرین کنید و یا علیه دوستان بازی کنید.
+
+🏆 ایجاد مسابقات برای دوستان یا مشترکین کانال شما.
+
+💵 از زمان به زمان <b>رایگان برای بازی</b> مسابقات با حمایت مالی با جوایز نقدی وجود دارد! با عضویت در کانالprizarena می توانید در مورد این تورنماها اطلاعات دریافت کنید.`,
 	},
 	Board: {
 		"en-US": "Board",

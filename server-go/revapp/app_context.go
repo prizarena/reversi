@@ -45,24 +45,38 @@ func (LocalesProvider) GetLocaleByCode5(code5 string) (strongo.Locale, error) {
 }
 
 func (appCtx revAppContext) SupportedLocales() strongo.LocalesProvider {
-	return PairLocalesProvider{}
+	return RevLocalesProvider{}
 }
 
-type PairLocalesProvider struct {
+type RevLocalesProvider struct {
 }
 
-func (PairLocalesProvider) GetLocaleByCode5(code5 string) (locale strongo.Locale, err error) {
+func (RevLocalesProvider) GetLocaleByCode5(code5 string) (locale strongo.Locale, err error) {
 	switch code5 {
 	case strongo.LocaleCodeEnUS:
 		return strongo.LocaleEnUS, nil
 	case strongo.LocalCodeRuRu:
 		return strongo.LocaleRuRu, nil
+	case strongo.LocaleCodeEsES:
+		return strongo.LocaleEsEs, nil
+	case strongo.LocaleCodeFrFR:
+		return strongo.LocaleFrFr, nil
+	case strongo.LocaleCodeEnUK:
+		return strongo.LocaleEsEs, nil
+	case strongo.LocaleCodeFaIR:
+		return strongo.LocaleFaIr, nil
+	case strongo.LocaleCodeDeDE:
+		return strongo.LocaleDeDe, nil
+	case strongo.LocaleCodeItIT:
+		return strongo.LocaleItIt, nil
+	case strongo.LocaleCodeUzUZ:
+		return strongo.LocaleUzUz, nil
 	default:
 		return locale, errors.New("Unsupported locale: " + code5)
 	}
 }
 
-var _ strongo.LocalesProvider = (*PairLocalesProvider)(nil)
+var _ strongo.LocalesProvider = (*RevLocalesProvider)(nil)
 
 func (appCtx revAppContext) GetBotChatEntityFactory(platform string) func() bots.BotChat {
 	switch platform {
