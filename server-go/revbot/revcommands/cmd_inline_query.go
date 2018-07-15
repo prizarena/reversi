@@ -91,7 +91,7 @@ func inlineQueryPlay(whc bots.WebhookContext, inlineQuery pabot.InlineQueryConte
 						ParseMode:             "HTML",
 						DisableWebPagePreview: m.DisableWebPagePreview,
 					},
-					ReplyMarkup: renderReversiTgKeyboard(p, false, "", lang, tournamentID),
+					ReplyMarkup: renderReversiTgKeyboard(whc, p, false, "", lang, tournamentID),
 				}
 			}
 

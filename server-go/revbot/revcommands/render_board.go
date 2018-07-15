@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/prizarena/reversi/server-go/revtrans"
+	"github.com/prizarena/prizarena-public/patrans"
 )
 
 func renderReversiBoardMessage(c context.Context, t strongo.SingleLocaleTranslator, tournament pamodels.Tournament, board revmodels.RevBoard, matchedTile, userID string) (m bots.MessageFromBot, err error) {
@@ -157,7 +158,7 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Boar
 	return text.String()
 }
 
-func renderReversiTgKeyboard(p placeDiskPayload, isCompleted bool, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
+func renderReversiTgKeyboard(whc bots.WebhookContext, p placeDiskPayload, isCompleted bool, possibleMove, lang, tournamentID string) (kb *tgbotapi.InlineKeyboardMarkup) {
 	if isCompleted {
 		playAgainCallbackData := new(bytes.Buffer)
 		switch p.mode {
@@ -172,11 +173,15 @@ func renderReversiTgKeyboard(p placeDiskPayload, isCompleted bool, possibleMove,
 		if tournamentID != "" {
 			playAgainCallbackData.WriteString("&t=" + tournamentID)
 		}
+		switchInlinePlay := whc.Locale().Code5[:2]
 		kb = &tgbotapi.InlineKeyboardMarkup{
 			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 				{{
-					Text: "Play again", CallbackData: playAgainCallbackData.String(),
+					Text: whc.Translate(patrans.PlayAgain), CallbackData: playAgainCallbackData.String(),
 				}},
+				{
+					{Text: whc.Translate(patrans.MultiPlayer), SwitchInlineQuery: &switchInlinePlay},
+				},
 			},
 		}
 		return
