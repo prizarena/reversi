@@ -383,6 +383,7 @@ func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, p plac
 	isCompleted := p.currentBoard.IsCompleted()
 	m.Text = renderReversiBoardText(whc, p.currentBoard, p.mode, isCompleted, p.userNames)
 	m.Keyboard = renderReversiTgKeyboard(whc, p, isCompleted, possibleMove, lang, tournament.ID)
+	m.DisableWebPagePreview = true
 	return
 }
 
