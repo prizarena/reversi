@@ -20,6 +20,7 @@ import (
 	"github.com/strongo/bots-api-telegram"
 	"github.com/strongo/emoji/go/emoji"
 	"github.com/strongo/slices"
+	"time"
 )
 
 const placeDiskCommandCode = "p"
@@ -223,7 +224,11 @@ func placeDiskMultiPlayer(whc bots.WebhookContext, callbackUrl *url.URL, p place
 			if db.IsNotFound(err) {
 				log.Debugf(c, "New board entity")
 				boardEH.RevBoardEntity = &revmodels.RevBoardEntity{
-					BoardEntityBase: turnbased.BoardEntityBase{Lang: whc.Locale().Code5, Round: 1},
+					BoardEntityBase: turnbased.BoardEntityBase{
+						Created: time.Now(),
+						Lang:    whc.Locale().Code5,
+						Round:   1,
+					},
 				}
 				p.currentBoard = revgame.OthelloBoard
 			} else {

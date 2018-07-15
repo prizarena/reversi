@@ -9,6 +9,7 @@ import (
 	"github.com/prizarena/reversi/server-go/revsecrets"
 	"github.com/prizarena/reversi/server-go/revgame"
 	"github.com/prizarena/prizarena-public/patrans"
+	"github.com/DebtsTracker/translations/emoji"
 )
 
 const startCommandCommandCode = "start"
@@ -44,6 +45,9 @@ func startAction(whc bots.WebhookContext) (m bots.MessageFromBot, err error) {
 		},
 		[]tgbotapi.InlineKeyboardButton{
 			{Text: whc.Translate(revtrans.Tournaments), CallbackData: "tournaments"},
+		},
+		[]tgbotapi.InlineKeyboardButton{
+			{Text: emoji.STAR_ICON + emoji.STAR_ICON + emoji.STAR_ICON + emoji.STAR_ICON + emoji.STAR_ICON, URL: "http://storebot.me/bot/reversigamebot"},
 		},
 	)
 	return
