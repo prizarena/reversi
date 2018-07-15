@@ -11,11 +11,11 @@ const (
 	FirstMoveDoneAwaitingSecond = "FirstMoveDoneAwaitingSecond"
 	Board                       = "Board"
 	// NewPlayWithAI               = "NewPlayWithAI"
-	FindFast                    = "FindFast"
-	ChooseSizeOfNextBoard       = "ChooseSizeOfNextBoard"
-	Tournaments                 = "Tournaments"
-	Flips                       = "Flips"
-	FlagOfTheDay                = "FalgOfTheDay"
+	FindFast              = "FindFast"
+	ChooseSizeOfNextBoard = "ChooseSizeOfNextBoard"
+	Tournaments           = "Tournaments"
+	Flips                 = "Flips"
+	FlagOfTheDay          = "FalgOfTheDay"
 
 	MT_HOW_TO_START_NEW_GAME = "MT_HOW_TO_START_NEW_GAME"
 	MT_NEW_GAME_WELCOME      = "MT_NEW_GAME_WELCOME"
@@ -25,4 +25,5 @@ const (
 	MT_AWAITING_PLAYER       = "MT_AWAITING_PLAYER"
 	MT_PLAYER_BALANCE        = "MT_PLAYER_BALANCE"
 	MT_ASK_TO_RATE           = "MT_ASK_TO_RATE"
+	GameCompleted            = "GameCompleted"
 )

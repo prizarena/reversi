@@ -29,6 +29,14 @@ var TRANS = map[string]map[string]string{
 		"en-US": "<b>Turns</b>: %v",
 		"ru-RU": "<b>Ходов</b>: %v",
 	},
+	GameCompleted: {
+		"en-US": `Game is completed.
+
+If you liked this bot please <a href="http://storebot.me/bot/reversigamebot">give us 5 stars</a>! We appreciate your feedback ` + emoji.FoldedHands,
+		"ru-RU": `Игра окончена.
+
+Если вам понравился наш бот пожалуйста <a href="http://storebot.me/bot/reversigamebot">поставьте нам 5 звёзд</a>! Мы будем очень признательны ` + emoji.FoldedHands,
+	},
 	NewGameInlineTitle: {
 		"en-US": emoji.BlackCircle + emoji.WhiteCircle + " Reversi - new game",
 		"ru-RU": emoji.BlackCircle + emoji.WhiteCircle + " Реверси - новая игра",

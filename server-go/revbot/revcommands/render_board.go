@@ -152,7 +152,7 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Boar
 	writeScore(revgame.Black, emoji.BlackCircle, blacksScore)
 	writeScore(revgame.White, emoji.WhiteCircle, whitesScore)
 	if isCompleted {
-		text.WriteString(`Game is completed.\n\nIf you liked it please <a href="http://storebot.me/bot/reversigamebot">give us 5 stars</a>!`)
+		text.WriteString(t.Translate(revtrans.GameCompleted))
 	}
 	return text.String()
 }
