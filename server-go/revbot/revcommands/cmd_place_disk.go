@@ -21,6 +21,7 @@ import (
 	"github.com/strongo/emoji/go/emoji"
 	"github.com/strongo/slices"
 	"time"
+	"regexp"
 )
 
 const placeDiskCommandCode = "p"
@@ -87,6 +88,8 @@ type placeDiskPayload struct {
 	transcript          revgame.Transcript
 }
 
+var reTranscript = regexp.MustCompile(`Transcript: (([A-H][1-8])+(-\d+)?)`)
+
 func placeDiskCallbackAction(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
 
 	data := whc.Input().(bots.WebhookCallbackQuery).GetData()
@@ -140,6 +143,33 @@ func placeDiskCallbackAction(whc bots.WebhookContext, callbackUrl *url.URL) (m b
 			if err = revgame.VerifyBoardTranscript(p.board, p.transcript); err != nil {
 				return
 			}
+		}
+
+		// Migrating to shorten callback data
+		if update := whc.Input().(telegram.TgWebhookInput).TgUpdate(); update.CallbackQuery.Message == nil {
+			log.Warningf(whc.Context(), "update.CallbackQuery.Message == nil")
+		} else {
+			groups := reTranscript.FindStringSubmatch(update.CallbackQuery.Message.Text)
+			if len(groups) > 1 {
+				log.Debugf(whc.Context(), "reTranscript groups: %v", groups)
+				items := strings.Split(groups[1], "-")
+				transcript := revgame.NewTranscriptFromHumanReadable(items[0])
+				if !transcript.Equal(p.transcript) {
+					log.Debugf(whc.Context(), "transcript != p.transcript: %v != %v", transcript, p.transcript)
+				}
+				var backSteps int
+				if len(items) > 1 {
+					if backSteps, err  = strconv.Atoi(items[1]); err != nil {
+						return
+					}
+				}
+				if backSteps != p.backSteps {
+					log.Debugf(whc.Context(), "backSteps != p.backSteps: %v != %v", backSteps, p.backSteps)
+				}
+			} else {
+				log.Debugf(whc.Context(), "Transcript not found in message")
+			}
+			const startTag = "</b>: <i>"
 		}
 	}
 
@@ -331,7 +361,15 @@ func placeDiskToBoard(whc bots.WebhookContext, callbackUrl *url.URL, p *placeDis
 				err = nil // Non critical
 			}
 			if cause == revgame.ErrNotValidMove {
-				possibleMove = emoji.SoccerBall
+				// possibleMove = emoji.SoccerBall
+				switch p.currentBoard.NextPlayer() {
+				case revgame.White:
+					possibleMove = emoji.WhiteSmallSquare
+				case revgame.Black:
+					possibleMove = emoji.BlackSmallSquare
+				default:
+					panic(fmt.Sprintf("unknown player: %v", p.board.NextPlayer()))
+				}
 			}
 			m.BotMessage = nil
 		} else {
@@ -381,9 +419,8 @@ func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, p plac
 	m.IsEdit = true
 	m.Format = bots.MessageFormatHTML
 	isCompleted := p.currentBoard.IsCompleted()
-	m.Text = renderReversiBoardText(whc, p.currentBoard, p.mode, isCompleted, p.userNames)
+	m.Text = renderReversiBoardText(whc, p, isCompleted, possibleMove)
 	m.Keyboard = renderReversiTgKeyboard(whc, p, isCompleted, possibleMove, lang, tournament.ID)
-	m.DisableWebPagePreview = true
 	return
 }
 

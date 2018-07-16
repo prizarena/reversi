@@ -109,16 +109,17 @@ func renderReversiBoardMessage(c context.Context, t strongo.SingleLocaleTranslat
 	return
 }
 
-func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Board, mode revgame.Mode, isCompleted bool, userNames []string) string {
+func renderReversiBoardText(t strongo.SingleLocaleTranslator, p placeDiskPayload, isCompleted bool, possibleMove string) string {
 	text := new(bytes.Buffer)
 	text.WriteString(fmt.Sprintf("<b>%v</b>\n", t.Translate(revtrans.GameCardTitle)))
-	blacksScore, whitesScore := board.Scores()
-	nextMove := board.NextPlayer()
-	writeScore := func(p revgame.Disk, disk string, score int) {
-		switch mode {
+	blacksScore, whitesScore := p.currentBoard.Scores()
+	nextMove := p.currentBoard.NextPlayer()
+
+	writeScore := func(player revgame.Disk, disk string, score int) {
+		switch p.mode {
 		case revgame.SinglePlayer:
 			var name string
-			if p == revgame.Black {
+			if player == revgame.Black {
 				name = "me"
 			} else {
 				name = emoji.RobotFace
@@ -126,32 +127,43 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, board revgame.Boar
 			fmt.Fprintf(text, "%v (%v): <b>%v</b>", disk, name, score)
 		case revgame.MultiPlayer:
 			var userName string
-			switch p {
+			switch player {
 			case revgame.Black:
-				userName = userNames[0]
+				userName = p.userNames[0]
 			case revgame.White:
-				if len(userNames) > 1 {
-					userName = userNames[1]
+				if len(p.userNames) > 1 {
+					userName = p.userNames[1]
 				} else {
 					userName = "<i>not joined yet</i>"
 				}
 			default:
-				panic("unknown player: " + string(p))
+				panic("unknown player: " + string(player))
 			}
 			if userName != "" {
 				fmt.Fprintf(text, "%v %v: <b>%v</b>", disk, userName, score)
 			}
 		default:
-			panic("unknown mode: " + string(mode))
+			panic("unknown mode: " + string(p.mode))
 		}
 
-		if nextMove == p {
+		if nextMove == player {
 			text.WriteString(" <code>← next move</code>")
 		}
 		text.WriteString("\n")
 	}
 	writeScore(revgame.Black, emoji.BlackCircle, blacksScore)
 	writeScore(revgame.White, emoji.WhiteCircle, whitesScore)
+	if possibleMove != "" {
+		fmt.Fprintf(text, "%v - possile moves\n", possibleMove)
+	}
+
+	text.Write([]byte("\n<b>Transcript</b>: <i>"))
+	text.WriteString(p.transcript.String())
+	if p.backSteps > 0 {
+		fmt.Fprintf(text, "-%v", p.backSteps)
+	}
+	text.Write([]byte("</i>"))
+
 	if isCompleted {
 		text.WriteString(t.Translate(revtrans.GameCompleted))
 	}

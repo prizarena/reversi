@@ -9,6 +9,10 @@ import (
 
 type Transcript []byte
 
+func (t Transcript) Equal(t2 Transcript) bool {
+	return bytes.Equal([]byte(t), []byte(t2))
+}
+
 var ErrNotValidTranscript = errors.New("not valid transcript")
 
 func EmptyTranscript() Transcript{
@@ -28,6 +32,23 @@ func NewTranscript(s string) (transcript Transcript) {
 		} else {
 			transcript[i] = byte(v)
 		}
+	}
+	return
+}
+
+func NewTranscriptFromHumanReadable(s string) (transcript Transcript) {
+	if len(s) == 0 {
+		return
+	}
+	count := len(s)/2
+	if count*2 != len(s) {
+		panic("len of transcript is not event")
+	}
+
+	transcript = make(Transcript, count)
+	for i := 0; i<count; i++ {
+		cell := turnbased.CellAddress(s[i*2:i*2+2])
+		transcript[i] = byte(Address{X: int8(cell.X()), Y: int8(cell.Y())}.ToMove())
 	}
 	return
 }
