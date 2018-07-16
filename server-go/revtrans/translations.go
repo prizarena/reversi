@@ -17,41 +17,77 @@ var TRANS = map[string]map[string]string{
 		"fa-IR": "اوه، یک جای کار مشکل دارد ...  \xF0\x9F\x98\xB3",
 		"it-IT": "Ops, qualcosa e' andato storto... \xF0\x9F\x98\xB3",
 	},
-	MT_START_SELECT_LANG: {
-		"en-US": "<b>Please select your language</b>\nПожалуйста выберите язык общения",
-		"ru-RU": "<b>Пожалуйста выберите язык общения</b>\nPlease select your language",
-	},
-	FlagOfTheDay: {
-		"en-US": `<i>To learn more about flag subscribe to</i> <a href="https://t.me/FlagOfTheDay">@FlagOfTheDay</a> <i>channel</i>.`,
-		"ru-RU": `<i>Чтобы узнать больше о флагах подпишитесь на канал</i> <a href="https://t.me/FlagOfTheDay">@FlagOfTheDay</a>.`,
-	},
-	Flips: {
-		"en-US": "<b>Turns</b>: %v",
-		"ru-RU": "<b>Ходов</b>: %v",
-	},
+	//Flips: {
+	//	"en-US": "<b>Turns</b>: %v",
+	//	"ru-RU": "<b>Ходов</b>: %v",
+	//},
 	GameCompleted: {
+		//--------------------------------------------------------------------------------------------------------------
 		"en-US": `Game is completed.
 
 If you liked this bot please <a href="https://t.me/storebot?start=reversigamebot">give us 5 stars</a>! We appreciate your feedback 🙏
 
 <i>P.S. Support game development by subscribing to @prizarena channel.</i>`,
+		//--------------------------------------------------------------------------------------------------------------
 		"ru-RU": `Игра окончена.
 
 Если вам понравился наш бот пожалуйста <a href="https://t.me/storebot?start=reversigamebot">поставьте нам 5 звёзд</a>! Мы будем очень признательны 🙏
 
 <i>P.S. Поддержите разработку игры подписашись на канал @prizarena.</i>` ,
+		//--------------------------------------------------------------------------------------------------------------
+		"de-DE": `Das Spiel ist abgeschlossen.
+
+Wenn Ihnen dieser Bot gefallen hat, <a href="https://t.me/storebot?start=reversigamebot">geben Sie uns 5 Sterne</a>! Wir freuen uns über Ihr Feedback 🙏
+
+<i> P.S. Unterstütze die Entwicklung von Spielen, indem du @prizarena abonnierst.</i>`,
+		//--------------------------------------------------------------------------------------------------------------
+		"es-ES": `El juego está completo.
+
+Si te gustó este robot,  ¡<a href="https://t.me/storebot?start=reversigamebot">danos 5 estrellas </a>! Agradecemos sus comentarios 🙏
+
+<i>P.S. Apoya el desarrollo de juegos suscribiéndote al canal @prizarena.</i>`,
+		//--------------------------------------------------------------------------------------------------------------
+		//"fa-IR": ``,
+		//--------------------------------------------------------------------------------------------------------------
+		"fr-FR": `Le jeu est terminé.
+
+Si vous avez aimé ce bot s'il vous plaît <a href="https://t.me/storebot?start=reversigamebot">donnez-nous 5 étoiles</a>! Nous apprécions vos commentaires 🙏
+
+<i>P.S. Soutenez le développement de jeux en vous abonnant au canal @prizarena.</i>`,
+		//--------------------------------------------------------------------------------------------------------------
+		"it-IT": `Il gioco è completato.
+
+Se ti è piaciuto questo bot, ti preghiamo di <a href="https://t.me/storebot?start=reversigamebot">darci 5 stelle</a>! Apprezziamo il tuo feedback 🙏
+
+<i> P.S. Supporta lo sviluppo del gioco iscrivendoti al canale @prizarena.</i>`,
+		//--------------------------------------------------------------------------------------------------------------
 	},
 	NewGameInlineTitle: {
 		"en-US": emoji.BlackCircle + emoji.WhiteCircle + " Reversi - new game",
 		"ru-RU": emoji.BlackCircle + emoji.WhiteCircle + " Реверси - новая игра",
+		"de-DE": emoji.BlackCircle + emoji.WhiteCircle + " Reversi - neues Spiel",
+		"es-ES": emoji.BlackCircle + emoji.WhiteCircle + " Reversi - juego nuevo",
+		"fa-IR": emoji.BlackCircle + emoji.WhiteCircle + " Reversi - بازی جدید",
+		"fr-FR": emoji.BlackCircle + emoji.WhiteCircle + " Reversi - nouveau jeu",
+		"it-IT": emoji.BlackCircle + emoji.WhiteCircle + " Reversi - nuovo gioco",
 	},
 	NewGameInlineDescription: {
 		"en-US": "Starts a new Reversi game",
 		"ru-RU": "Создать новую игру Реверси",
+		"de-DE": "Startet ein neues Reversi-Spiel",
+		"es-ES": "Inicia un nuevo juego de Reversi",
+		"fa-IR": "یک بازی Reversi جدید شروع می کند",
+		"fr-FR": "Commence un nouveau jeu Reversi",
+		"it-IT": "Inizia una nuova partita di Reversi",
 	},
 	GameCardTitle: {
 		"en-US": "Reversi game",
 		"ru-RU": "Игра: Реверси",
+		"de-DE": "Reversi Spiel",
+		"es-ES": "Reversi juego",
+		"fa-IR": "بازی Reversi",
+		"fr-FR": "Reversi jeu",
+		"it-IT": "Gioco Reversi",
 	},
 	OnStartWelcome: {
 		"en-US": `🀄 <b>Reversi</b> game
@@ -109,24 +145,17 @@ Es hat sehr einfache <a href="https://de.wikipedia.org/wiki/Reversi#Rules">Regel
 
 💵 از زمان به زمان <b>رایگان برای بازی</b> مسابقات با حمایت مالی با جوایز نقدی وجود دارد! با عضویت در کانالprizarena می توانید در مورد این تورنماها اطلاعات دریافت کنید.`,
 	},
-	Board: {
-		"en-US": "Board",
-		"ru-RU": "Доска",
-	},
-	Tournaments: {
-		"en-US": "🏆 Tournaments",
-		"ru-RU": "🏆 Турниры",
-	},
+	//Board: {
+	//	"en-US": "Board",
+	//	"ru-RU": "Доска",
+	//},
+	//Tournaments: {
+	//	"en-US": "🏆 Tournaments",
+	//	"ru-RU": "🏆 Турниры",
+	//},
 	FirstMoveDoneAwaitingSecond: {
 		"en-US": "Player <b>%v</b> made choice, awaiting another player...",
 		"ru-RU": "Игрок <b>%v</b> сделал свой ход, ожидается ход второго игрока...",
-	},
-	FindFast: {
-		"en-US": "Find matching revs as fast as you can.",
-		"ru-RU": "Найдите совпадающие пары настолько быстро как можете.",
-	},
-	RulesShort: {
-		"en-US": `<pre></pre>`,
 	},
 	NewGameText: {
 		"en-US": `<b>Reversi game</b>
@@ -135,53 +164,18 @@ Blacks make 1st move.`,
 		"ru-RU": `Игра: <b>Реверси</b>
 
 Чёрные ходят первыми.`,
-	},
-	MT_HOW_TO_START_NEW_GAME: {
-		"en-US": `<b>To begin new game:</b>
-  1. Open Telegram chat with your friend
-  2. Type into the text input @BiddingTicTacToeBot and a space
-  3. Wait for a popup menu and choose "New game"
+		"de-DE": `<b>Reversi Spiel</b>
 
-<i>First 2 steps can be replaced by clicking the button below!</i>`,
-		//
-		"ru-RU": `<b>Чтобы начать игру:</b>
-  1. Откройте чат с вашим другом
-  2. Наберите в поле ввода @BiddingTicTacToeBot и пробел
-  3. Дождитесь появлению меню и выберите "Новая игра"
+Schwarze machen den ersten Zug.`,
+		"es-ES": `<b>Juego Reversi</b>
 
-<i>Два первых шага могут быть заменены одним кликом на кнопку ниже!</i>`,
+Los negros hacen primer movimiento.`,
+		"fa-IR": `<b>بازی Reversi</b>
+
+سیاه پوستان، حرکت اول را انجام می دهند.`,
+		"fr-FR": `<b>Jeu Reversi</b>
+
+Les Noirs font le premier mouvement.`,
+		"it-IT": ``,
 	},
-	MT_NEW_GAME_WELCOME: {
-		"en-US": `Black makes first move.`,
-		"ru-RU": `Чёрные ходят первыми.`,
-	},
-	MT_HOW_TO_INLINE: {
-		"en-US": `To begin the game and to make first move:
-  * choose a cell
-  * click Start at bottom of the screen`,
-		//
-		"ru-RU": `Чтобы начать игру и сделать первый ход:
-  * выберите клетку
-  * нажмите Start внизу экрана`,
-	},
-	MT_PLAYER: {
-		"en-US": "Player <b>%v</b>:",
-		"ru-RU": "Игрок <b>%v</b>:",
-	},
-	MT_AWAITING_PLAYER: {
-		"en-US": "awaiting...",
-		"ru-RU": "ожидается...",
-	},
-	MT_PLAYER_BALANCE: {
-		"en-US": "Balance: %d",
-		"ru-RU": "Баланс: %d",
-	},
-	MT_ASK_TO_RATE: {
-		"en-US": `🙋 <b>Did you like the game?</b> We'll appreciate if you <a href="https://t.me/storebot?start=BiddingTicTacToeBot">rate us</a> with 5⭐s!'`,
-		"ru-RU": `🙋 <b>Понравилась игра?</b> Будем признательны если <a href="https://t.me/storebot?start=BiddingTicTacToeBot">оцените нас</a> на 5⭐!`,
-	},
-	// MT_FREE_GAME_SPONSORED_BY: {
-	// 	"en-US": "🙏 Free game sponsored by %v",
-	// 	"ru-RU": "🙏 Бесплатная игра при поддержке %v - бот для учёта долгов",
-	// },
 }

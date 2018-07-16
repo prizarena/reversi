@@ -44,7 +44,7 @@ func startAction(whc bots.WebhookContext) (m bots.MessageFromBot, err error) {
 			{Text: whc.Translate(patrans.MultiPlayer), SwitchInlineQuery: &switchInlinePlay},
 		},
 		[]tgbotapi.InlineKeyboardButton{
-			{Text: whc.Translate(revtrans.Tournaments), CallbackData: "tournaments"},
+			{Text: whc.Translate(patrans.TournamentsButton), CallbackData: "tournaments"},
 		},
 		[]tgbotapi.InlineKeyboardButton{
 			{Text: emoji.STAR_ICON + emoji.STAR_ICON + emoji.STAR_ICON + emoji.STAR_ICON + emoji.STAR_ICON, URL: "http://storebot.me/bot/reversigamebot"},
