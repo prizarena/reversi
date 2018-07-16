@@ -1,6 +1,7 @@
 package revtrans
 
 const (
+	Me = "Me"
 	GameCardTitle  = "GameCardTitle"
 	OnStartWelcome = "OnStartWelcome"
 

@@ -89,6 +89,15 @@ Se ti è piaciuto questo bot, ti preghiamo di <a href="https://t.me/storebot?sta
 		"fr-FR": "Reversi jeu",
 		"it-IT": "Gioco Reversi",
 	},
+	Me: {
+		"en-US": "me",
+		"ru-RU": "я",
+		"de-DE": "mich",
+		"es-ES": "yo",
+		"fa-IR": "من",
+		"fr-FR": "moi",
+		"it-IT": "me",
+	},
 	OnStartWelcome: {
 		"en-US": `🀄 <b>Reversi</b> game
 

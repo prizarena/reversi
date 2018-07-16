@@ -235,18 +235,29 @@ func renderReversiTgKeyboard(whc bots.WebhookContext, p placeDiskPayload, isComp
 		} else {
 			replayRow := make([]tgbotapi.InlineKeyboardButton, 0, 3)
 
+			locale := whc.Locale()
+
 			if p.backSteps+1 < lastMovesCount || (p.backSteps+1 == lastMovesCount && p.currentBoard.Turns() == 1) {
 				backButton := tgbotapi.InlineKeyboardButton{
-					Text:         emoji.ReverseButton + " -1 step",
 					CallbackData: getPlaceDiskSinglePlayerCallbackData(p, turnbased.CellAddress("-1"), lang, tournamentID),
 				}
+				if locale.IsRtl {
+					backButton.Text = emoji.PlayButton + " -1"
+				} else {
+					backButton.Text = "-1 " + emoji.ReverseButton
+				}
+
 				replayRow = append(replayRow, backButton)
 			}
 
 			if p.backSteps > 0 {
 				forwardButton := tgbotapi.InlineKeyboardButton{
-					Text:         emoji.PlayButton + " +1 step",
 					CallbackData: getPlaceDiskSinglePlayerCallbackData(p, turnbased.CellAddress("+1"), lang, tournamentID),
+				}
+				if locale.IsRtl {
+					forwardButton.Text = "+1 " + emoji.ReverseButton
+				} else {
+					forwardButton.Text = emoji.PlayButton + " +1"
 				}
 				replayRow = append(replayRow, forwardButton)
 			}
@@ -256,6 +267,9 @@ func renderReversiTgKeyboard(whc bots.WebhookContext, p placeDiskPayload, isComp
 				CallbackData: getPlaceDiskSinglePlayerCallbackData(p, turnbased.CellAddress("~"), lang, tournamentID),
 			}
 			replayRow = append(replayRow, aiButton)
+			if locale.IsRtl {
+				replayRow[0], replayRow[len(replayRow)-1] = replayRow[len(replayRow)-1], replayRow[0]
+			}
 			kb.InlineKeyboard = append(kb.InlineKeyboard, replayRow)
 		}
 	}
