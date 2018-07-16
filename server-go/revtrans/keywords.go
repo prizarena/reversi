@@ -2,6 +2,7 @@ package revtrans
 
 const (
 	Me = "Me"
+	NextMove = "NextMove"
 	GameCardTitle  = "GameCardTitle"
 	OnStartWelcome = "OnStartWelcome"
 

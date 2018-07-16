@@ -120,7 +120,7 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, p placeDiskPayload
 		case revgame.SinglePlayer:
 			var name string
 			if player == revgame.Black {
-				name = "me"
+				name = t.Translate(revtrans.Me)
 			} else {
 				name = emoji.RobotFace
 			}
@@ -147,7 +147,11 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, p placeDiskPayload
 		}
 
 		if nextMove == player {
-			text.WriteString(" <code>← next move</code>")
+			if t.Locale().IsRtl {
+				fmt.Fprintf(text, " <code>%v →</code>", t.Translate(revtrans.NextMove))
+			} else {
+				fmt.Fprintf(text, " <code>← %v</code>", t.Translate(revtrans.NextMove))
+			}
 		}
 		text.WriteString("\n")
 	}

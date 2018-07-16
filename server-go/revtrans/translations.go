@@ -98,6 +98,15 @@ Se ti è piaciuto questo bot, ti preghiamo di <a href="https://t.me/storebot?sta
 		"fr-FR": "moi",
 		"it-IT": "me",
 	},
+	NextMove: {
+		"en-US": "next move",
+		"ru-RU": "ходит следуюшим",
+		"de-DE": "nächster Zug",
+		"es-ES": "próximo movimiento",
+		"fa-IR": "حرکت بعدی",
+		"fr-FR": "prochaine étape",
+		"it-IT": "prossima mossa",
+	},
 	OnStartWelcome: {
 		"en-US": `🀄 <b>Reversi</b> game
 
