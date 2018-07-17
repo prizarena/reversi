@@ -122,7 +122,11 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, p placeDiskPayload
 			if player == revgame.Black {
 				name = t.Translate(revtrans.Me)
 			} else {
-				name = emoji.RobotFace
+				if t.Locale().Code5 == "fa-IR" {
+					name = emoji.RobotFace + "ربات"
+				} else {
+					name = emoji.RobotFace
+				}
 			}
 			fmt.Fprintf(text, "%v (%v): <b>%v</b>", disk, name, score)
 		case revgame.MultiPlayer:
@@ -148,7 +152,7 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, p placeDiskPayload
 
 		if nextMove == player {
 			if t.Locale().IsRtl {
-				fmt.Fprintf(text, " <code>%v →</code>", t.Translate(revtrans.NextMove))
+				fmt.Fprintf(text, " <code>→ %v</code>", t.Translate(revtrans.NextMove))
 			} else {
 				fmt.Fprintf(text, " <code>← %v</code>", t.Translate(revtrans.NextMove))
 			}
@@ -169,7 +173,7 @@ func renderReversiBoardText(t strongo.SingleLocaleTranslator, p placeDiskPayload
 	text.Write([]byte("</i>"))
 
 	if isCompleted {
-		text.WriteString(t.Translate(revtrans.GameCompleted))
+		text.WriteString("\n"+t.Translate(revtrans.GameCompleted))
 	}
 	return text.String()
 }

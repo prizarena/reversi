@@ -47,7 +47,11 @@ Si te gustó este robot,  ¡<a href="https://t.me/storebot?start=reversigamebot"
 
 <i>P.S. Apoya el desarrollo de juegos suscribiéndote al canal @prizarena.</i>`,
 		//--------------------------------------------------------------------------------------------------------------
-		//"fa-IR": ``,
+		"fa-IR": `بازی تکمیل شده است
+
+اگر این ربات را دوست داشتید لطفا <a href="https://t.me/storebot?start=reversigamebot">5 ستاره را به ما بدهید</a>  ما از نظرات شما قدردانی می کنیم
+
+<i>P.S. پشتیبانی از بازی با عضویت در کانال @prizarena</i>`,
 		//--------------------------------------------------------------------------------------------------------------
 		"fr-FR": `Le jeu est terminé.
 

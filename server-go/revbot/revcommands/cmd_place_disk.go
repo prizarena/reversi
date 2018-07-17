@@ -24,33 +24,37 @@ import (
 	"regexp"
 )
 
-const placeDiskCommandCode = "p"
+const placeDiskCommandCode = "place_disk"
 
 func getPlaceDiskSinglePlayerCallbackData(p placeDiskPayload, address turnbased.CellAddress, lang, tournamentID string) string {
 	s := new(bytes.Buffer)
 
+	if p.mode == revgame.MultiPlayer {
+		s.WriteByte('_')
+	}
 	s.Write([]byte(address))
-	s.WriteRune('.')
-	if p.board.DisksCount() > 4 { // Not optimal to count for every button
-		s.WriteString(p.board.ToBase64())
-	}
 
-	if tournamentID != "" {
-		s.WriteString(".t=" + tournamentID)
-	}
-	if p.mode == revgame.MultiPlayer && lang != "" {
-		s.WriteString(".l=" + lang)
-	}
 	switch p.mode {
 	case revgame.SinglePlayer:
-		if len(p.transcript) == 0 {
-			s.WriteString(".m=s")
-		} else {
-			if p.backSteps > 0 {
-				s.WriteString(".r=" + strconv.FormatInt(int64(p.backSteps), 36))
-			}
-			s.WriteString(".h=")
-			s.WriteString(p.transcript.ToBase64())
+		//if len(p.transcript) == 0 {
+		//	s.WriteString(".m=s")
+		//} else {
+		//	if p.backSteps > 0 {
+		//		s.WriteString(".r=" + strconv.FormatInt(int64(p.backSteps), 36))
+		//	}
+		//	s.WriteString(".h=")
+		//	s.WriteString(p.transcript.ToBase64())
+		//}
+	case revgame.MultiPlayer:
+		//s.WriteRune('.')
+		//if p.board.DisksCount() > 4 { // Not optimal to count for every button
+		//	s.WriteString(p.board.ToBase64())
+		//}
+		if tournamentID != "" {
+			s.WriteString(".t=" + tournamentID)
+		}
+		if lang != "" {
+			s.WriteString(".l=" + lang)
 		}
 	}
 	return s.String()
@@ -67,7 +71,7 @@ var placeDiskCommand = bots.Command{
 				return false
 			}
 			f := data[0]
-			result := f == '+' || f == '-' || f == '~' || (f >= 'A' && f <= 'H')
+			result := f == '+' || f == '-' || f == '~' || f == '_' || (f >= 'A' && f <= 'H')
 			log.Debugf(c, "placeDiskCommand.Matcher(): result: %v", result)
 			return result
 		} else {
@@ -88,88 +92,91 @@ type placeDiskPayload struct {
 	transcript          revgame.Transcript
 }
 
-var reTranscript = regexp.MustCompile(`Transcript: (([A-H][1-8])+(-\d+)?)`)
+var reTranscript = regexp.MustCompile(`Transcript: (?:((?:[A-H][1-8])+)(?:-(\d+))?)`)
 
 func placeDiskCallbackAction(whc bots.WebhookContext, callbackUrl *url.URL) (m bots.MessageFromBot, err error) {
+	var p placeDiskPayload
 
 	data := whc.Input().(bots.WebhookCallbackQuery).GetData()
+	if data[0] == '_' {
+		p.mode = revgame.MultiPlayer
+		data = data[1:]
+	}
+
 	items := strings.SplitN(data, ".", 3)
 
 	if len(items) > 2 {
 		callbackUrl.RawQuery = strings.Replace(items[2], ".", "&", -1)
 	}
 
-	var p placeDiskPayload
-
 	q := callbackUrl.Query()
-	p.mode = revgame.Mode(q.Get("m"))
 	p.userID = whc.AppUserStrID()
-	switch p.mode {
-	// case revgame.WithAI:
-	// 	player = getPlayerFromString(q.Get("p"))
-	case revgame.SinglePlayer, revgame.MultiPlayer: // OK
-	case "":
-		if q.Get("h") != "" {
-			p.mode = revgame.SinglePlayer
-		} else {
-			p.mode = revgame.MultiPlayer
-		}
-	default:
-		err = fmt.Errorf("unknown mode: [%v]", p.mode)
-	}
 
-	p.transcript = revgame.NewTranscript(q.Get("h"))
-
-	if sBackSteps := q.Get("r"); sBackSteps != "" {
-		var iBackStep int64
-		if iBackStep, err = strconv.ParseInt(sBackSteps, 36, 8); err != nil {
-			err = errors.WithMessage(err, "Parameter 'r' is expected to be a base36 encoded integer")
-			return
-		}
-		p.backSteps = int(iBackStep)
-	}
-
-	if p.mode == revgame.SinglePlayer { // Get board & current board
-		var b string
-		if len(items) > 1 {
-			b = items[1]
-		}
-		if b == "" {
-			p.board = revgame.OthelloBoard
-		} else {
-			if p.board, err = revgame.NewBoardFromBase64(b); err != nil {
-				return
+	// Migrating to shorten callback data
+	if update := whc.Input().(telegram.TgWebhookInput).TgUpdate(); update.CallbackQuery.Message == nil {
+		log.Warningf(whc.Context(), "update.CallbackQuery.Message == nil")
+	} else {
+		groups := reTranscript.FindStringSubmatch(update.CallbackQuery.Message.Text)
+		if len(groups) == 0 && len(data) > 2 { // TODO: Branch for old boards, remove later.
+			log.Debugf(whc.Context(), "Transcript not found in message")
+			if p.mode == "" {
+				p.mode = revgame.Mode(q.Get("m"))
 			}
-			if err = revgame.VerifyBoardTranscript(p.board, p.transcript); err != nil {
-				return
-			}
-		}
-
-		// Migrating to shorten callback data
-		if update := whc.Input().(telegram.TgWebhookInput).TgUpdate(); update.CallbackQuery.Message == nil {
-			log.Warningf(whc.Context(), "update.CallbackQuery.Message == nil")
-		} else {
-			groups := reTranscript.FindStringSubmatch(update.CallbackQuery.Message.Text)
-			if len(groups) > 1 {
-				log.Debugf(whc.Context(), "reTranscript groups: %v", groups)
-				items := strings.Split(groups[1], "-")
-				transcript := revgame.NewTranscriptFromHumanReadable(items[0])
-				if !transcript.Equal(p.transcript) {
-					log.Debugf(whc.Context(), "transcript != p.transcript: %v != %v", transcript, p.transcript)
+			switch p.mode {
+			// case revgame.WithAI:
+			// 	player = getPlayerFromString(q.Get("p"))
+			case revgame.SinglePlayer, revgame.MultiPlayer: // OK
+			case "":
+				if q.Get("h") != "" {
+					p.mode = revgame.SinglePlayer
+				} else {
+					p.mode = revgame.MultiPlayer
 				}
-				var backSteps int
+			default:
+				err = fmt.Errorf("unknown mode: [%v]", p.mode)
+			}
+			if p.mode == revgame.SinglePlayer { // Get board & current board
+				var b string
 				if len(items) > 1 {
-					if backSteps, err  = strconv.Atoi(items[1]); err != nil {
+					b = items[1]
+				}
+				if b == "" {
+					p.board = revgame.OthelloBoard
+				} else {
+					if p.board, err = revgame.NewBoardFromBase64(b); err != nil {
+						return
+					}
+					if err = revgame.VerifyBoardTranscript(p.board, p.transcript); err != nil {
 						return
 					}
 				}
-				if backSteps != p.backSteps {
-					log.Debugf(whc.Context(), "backSteps != p.backSteps: %v != %v", backSteps, p.backSteps)
-				}
-			} else {
-				log.Debugf(whc.Context(), "Transcript not found in message")
 			}
-			const startTag = "</b>: <i>"
+
+			p.transcript = revgame.NewTranscript(q.Get("h"))
+
+			if sBackSteps := q.Get("r"); sBackSteps != "" {
+				var iBackStep int64
+				if iBackStep, err = strconv.ParseInt(sBackSteps, 36, 8); err != nil {
+					err = errors.WithMessage(err, "Parameter 'r' is expected to be a base36 encoded integer")
+					return
+				}
+				p.backSteps = int(iBackStep)
+			}
+		} else { // New branch with minimum callback data
+			if p.mode != revgame.MultiPlayer {
+				p.mode = revgame.SinglePlayer
+			}
+			p.board = revgame.OthelloBoard
+			if len(groups) > 0 {
+				transcript, backSteps := groups[1], groups[2]
+				log.Debugf(whc.Context(), "transcript: %v, backSteps: %v, reTranscript groups: %v", transcript, backSteps, groups)
+				p.transcript = revgame.NewTranscriptFromHumanReadable(items[0])
+				if backSteps != "" {
+					if p.backSteps, err  = strconv.Atoi(backSteps); err != nil {
+						return
+					}
+				}
+			}
 		}
 	}
 
@@ -396,20 +403,20 @@ func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, p plac
 	tournament.ID = q.Get("t")
 
 	{ // Slide history window
-		const historyLimit = 11
-		historyLen := len(p.transcript)
-		log.Debugf(whc.Context(), "p.mode: %v, historyLimit: %v, historyLen: %v", p.mode, historyLimit, historyLen)
-		if slideSteps := historyLen - historyLimit; p.mode == revgame.SinglePlayer && slideSteps > 0 {
-			for ; slideSteps > 0; slideSteps-- {
-				var move revgame.Move
-				move, p.transcript = p.transcript.NextMove()
-				player := p.board.NextPlayer()
-				if p.board, err = p.board.MakeMove(player, move.Address()); err != nil {
-					return
-				}
-			}
-			p.backSteps += slideSteps
-		}
+		//const historyLimit = 11
+		//historyLen := len(p.transcript)
+		//log.Debugf(whc.Context(), "p.mode: %v, historyLimit: %v, historyLen: %v", p.mode, historyLimit, historyLen)
+		//if slideSteps := historyLen - historyLimit; p.mode == revgame.SinglePlayer && slideSteps > 0 {
+		//	for ; slideSteps > 0; slideSteps-- {
+		//		var move revgame.Move
+		//		move, p.transcript = p.transcript.NextMove()
+		//		player := p.board.NextPlayer()
+		//		if p.board, err = p.board.MakeMove(player, move.Address()); err != nil {
+		//			return
+		//		}
+		//	}
+		//	p.backSteps += slideSteps
+		//}
 	}
 
 	if err = revgame.VerifyBoardTranscript(p.board, p.transcript); err != nil { // better to cover by unit tests
@@ -420,6 +427,7 @@ func renderTelegramMessage(whc bots.WebhookContext, callbackUrl *url.URL, p plac
 	m.Format = bots.MessageFormatHTML
 	isCompleted := p.currentBoard.IsCompleted()
 	m.Text = renderReversiBoardText(whc, p, isCompleted, possibleMove)
+	m.DisableWebPagePreview = true
 	m.Keyboard = renderReversiTgKeyboard(whc, p, isCompleted, possibleMove, lang, tournament.ID)
 	return
 }
