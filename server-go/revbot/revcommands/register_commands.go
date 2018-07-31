@@ -13,6 +13,7 @@ func RegisterRevCommands(router bots.WebhooksRouter) {
 		placeDiskCommand,
 		newBoardCommand,
 		newBoardSinglePlayerCommand,
+		newChatMembersCommand,
 		// newBoardWithAICommand,
 	})
 
