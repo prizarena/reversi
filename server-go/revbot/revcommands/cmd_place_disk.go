@@ -1,27 +1,27 @@
 package revcommands
 
 import (
-	"github.com/strongo/bots-framework/core"
-	"net/url"
-	"github.com/prizarena/turn-based"
 	"bytes"
-	"github.com/prizarena/reversi/server-go/revgame"
-	"strconv"
+	"context"
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/prizarena/prizarena-public/pamodels"
-	"strings"
-	"github.com/strongo/log"
-	"fmt"
 	"github.com/prizarena/reversi/server-go/revdal"
-	"context"
-	"github.com/strongo/db"
+	"github.com/prizarena/reversi/server-go/revgame"
 	"github.com/prizarena/reversi/server-go/revmodels"
-	"github.com/strongo/bots-framework/platforms/telegram"
+	"github.com/prizarena/turnbased"
 	"github.com/strongo/bots-api-telegram"
+	"github.com/strongo/bots-framework/core"
+	"github.com/strongo/bots-framework/platforms/telegram"
+	"github.com/strongo/db"
 	"github.com/strongo/emoji/go/emoji"
+	"github.com/strongo/log"
 	"github.com/strongo/slices"
-	"time"
+	"net/url"
 	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
 const placeDiskCommandCode = "p"
@@ -159,7 +159,7 @@ func placeDiskCallbackAction(whc bots.WebhookContext, callbackUrl *url.URL) (m b
 				}
 				var backSteps int
 				if len(items) > 1 {
-					if backSteps, err  = strconv.Atoi(items[1]); err != nil {
+					if backSteps, err = strconv.Atoi(items[1]); err != nil {
 						return
 					}
 				}

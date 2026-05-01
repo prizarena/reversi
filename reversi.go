@@ -1,1 +1,3 @@
 package reversi
+
+func init() {}

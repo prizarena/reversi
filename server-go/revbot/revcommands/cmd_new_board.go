@@ -1,16 +1,14 @@
 package revcommands
 
 import (
-	"github.com/strongo/bots-framework/core"
-	"net/url"
+	"github.com/prizarena/prizarena-public/pamodels"
+	"github.com/prizarena/reversi/server-go/revgame"
 	"github.com/prizarena/reversi/server-go/revmodels"
 	"github.com/strongo/bots-framework/platforms/telegram"
-	"github.com/strongo/db"
 	"github.com/strongo/log"
+	"net/url"
 	"strconv"
-	"github.com/prizarena/prizarena-public/pamodels"
 	"strings"
-	"github.com/prizarena/reversi/server-go/revgame"
 )
 
 const newCommandCode = "new"
@@ -36,8 +34,7 @@ var newBoardCommand = bots.NewCallbackCommand(
 		}
 
 		board := revmodels.RevBoard{
-			RevBoardEntity: &revmodels.RevBoardEntity{
-			},
+			RevBoardEntity: &revmodels.RevBoardEntity{},
 		}
 		board.SetBoardState(revgame.OthelloBoard)
 		tgCallbackQuery := whc.Input().(telegram.TgWebhookCallbackQuery)

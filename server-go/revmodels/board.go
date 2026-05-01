@@ -1,40 +1,19 @@
 package revmodels
 
 import (
-	"github.com/strongo/db"
-	"github.com/prizarena/turn-based"
-	"github.com/prizarena/reversi/server-go/revgame"
 	"fmt"
+	"github.com/prizarena/reversi/server-go/revgame"
+	"github.com/strongo/dalgo/record"
 )
 
 const BoardKind = turnbased.BoardKind
 
 type RevBoard struct {
-	db.StringID
+	record.WithID[string]
 	*RevBoardEntity
 }
 
-var _ db.EntityHolder = (*RevBoard)(nil)
-
-func (RevBoard) Kind() string {
-	return BoardKind
-}
-
-func (RevBoard) NewEntity() interface{} {
-	return &RevBoardEntity{}
-}
-
-func (b RevBoard) Entity() interface{} {
-	return b.RevBoardEntity
-}
-
-func (b *RevBoard) SetEntity(v interface{}) {
-	if v == nil {
-		b.RevBoardEntity = nil
-	} else {
-		b.RevBoardEntity = (v).(*RevBoardEntity)
-	}
-}
+//var _ db.EntityHolder = (*RevBoard)(nil)
 
 type RevBoardEntity struct {
 	turnbased.BoardEntityBase
