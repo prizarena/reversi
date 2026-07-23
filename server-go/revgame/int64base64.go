@@ -37,17 +37,10 @@ func DecodeIntFromBase64(s string) (int64, error) {
 	return res, nil
 }
 
-const intToStrBase = 36
-
 func EncodeIntToString(v int64) string {
-	// return strconv.FormatInt(v, intToStrBase)
 	return EncodeIntToBase64(v)
-	// 0000gw_0000801   - base64
-	// fwopxxc_vmppmo0  - base=36
-
 }
 
 func DecodeStringToInt(s string) (int64, error) {
-	// return strconv.ParseInt(s, intToStrBase, 64)
 	return DecodeIntFromBase64(s)
 }
