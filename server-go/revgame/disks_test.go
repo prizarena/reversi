@@ -1,8 +1,8 @@
 package revgame
 
 import (
-	"testing"
 	"github.com/pkg/errors"
+	"testing"
 )
 
 func TestDisks_bit(t *testing.T) {
@@ -49,6 +49,32 @@ func TestPlayerDisks_Add_All(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestDisks_mustAdd(t *testing.T) {
+	var pd Disks
+	a := Address{X: 2, Y: 3}
+	pd = pd.mustAdd(a)
+	if !pd.isPlaced(a) {
+		t.Fatalf("mustAdd did not place a disk at %v", a)
+	}
+	// Adding to an already-occupied cell must panic.
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected mustAdd to panic on an occupied cell")
+		}
+	}()
+	pd.mustAdd(a)
+}
+
+func TestDisks_Remove_UnoccupiedPanics(t *testing.T) {
+	var pd Disks // empty
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected remove to panic on an unoccupied cell")
+		}
+	}()
+	pd.remove(Address{X: 1, Y: 1})
 }
 
 func TestPlayerDisks_Remove(t *testing.T) {

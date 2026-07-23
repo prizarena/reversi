@@ -1,8 +1,8 @@
 package revgame
 
 import (
-	"testing"
 	"github.com/pkg/errors"
+	"testing"
 )
 
 func TestBoard_DrawBoard(t *testing.T) {
@@ -90,10 +90,10 @@ func TestBoard_UndoMove(t *testing.T) {
 	}
 
 	steps := []struct {
-		p Disk
-		ca CellAddress
+		p     Disk
+		ca    CellAddress
 		board Board
-	} {
+	}{
 		{p: White, board: OthelloBoard},
 		{p: Black, ca: "F5"},
 		{p: White, ca: "F4"},
@@ -114,7 +114,7 @@ func TestBoard_UndoMove(t *testing.T) {
 		steps[i].board = board
 		//t.Logf("Step #%v%v", i, board.DrawBoard("*", "O", "", "", "\n"))
 	}
-	for i := len(steps)-1; i > 0; i-- {
+	for i := len(steps) - 1; i > 0; i-- {
 		step := steps[i]
 		a := CellAddressToRevAddress(step.ca)
 		prevStep := steps[i-1]
