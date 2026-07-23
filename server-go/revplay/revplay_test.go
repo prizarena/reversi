@@ -44,9 +44,10 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		name string
 		snap Snapshot
 	}{
-		{"start-ai", Snapshot{Board: revgame.OthelloBoard, Opponent: OpponentAI}},
-		{"mid-random", Snapshot{Board: midBoard, Opponent: OpponentRandom}},
-		{"full-ai", Snapshot{Board: fullBoard, Opponent: OpponentAI}},
+		{"start-ai-black", Snapshot{Board: revgame.OthelloBoard, Opponent: OpponentAI, Human: revgame.Black}},
+		{"start-ai-white", Snapshot{Board: revgame.OthelloBoard, Opponent: OpponentAI, Human: revgame.White}},
+		{"mid-random-white", Snapshot{Board: midBoard, Opponent: OpponentRandom, Human: revgame.White}},
+		{"full-ai-black", Snapshot{Board: fullBoard, Opponent: OpponentAI, Human: revgame.Black}},
 	}
 
 	for _, tc := range cases {
@@ -65,6 +66,9 @@ func TestSnapshotRoundTrip(t *testing.T) {
 			if decoded.Opponent != tc.snap.Opponent {
 				t.Errorf("opponent mismatch: got %q want %q", decoded.Opponent, tc.snap.Opponent)
 			}
+			if decoded.Human != tc.snap.Human {
+				t.Errorf("human mismatch: got %v want %v", decoded.Human, tc.snap.Human)
+			}
 		})
 	}
 }
@@ -73,79 +77,153 @@ func TestDecodeSnapshotRejectsGarbage(t *testing.T) {
 	if _, err := DecodeSnapshot(""); err == nil {
 		t.Error("expected error decoding empty string")
 	}
-	if _, err := DecodeSnapshot("x.notbase64!!!"); err == nil {
+	if _, err := DecodeSnapshot("xy.notbase64!!!"); err == nil {
 		t.Error("expected error decoding unknown opponent / bad board")
 	}
 }
 
 // --- New game ----------------------------------------------------------------
 
-func TestNewGameStartPosition(t *testing.T) {
-	s := NewGame(OpponentAI)
+// assertStartPosition checks the four Othello opening disks are in place.
+func assertStartPosition(t *testing.T, b revgame.Board) {
+	t.Helper()
+	black, white := b.Scores()
+	if black != 2 || white != 2 {
+		t.Errorf("start scores = (%d,%d), want (2,2)", black, white)
+	}
+	// d5/e4 black, d4/e5 white (x: d=3,e=4 ; y: row5=4, row4=3).
+	for _, a := range []revgame.Address{{X: 3, Y: 4}, {X: 4, Y: 3}} {
+		if !isBlack(b, a) {
+			t.Errorf("expected black disk at %v", a)
+		}
+	}
+	for _, a := range []revgame.Address{{X: 3, Y: 3}, {X: 4, Y: 4}} {
+		if !isWhite(b, a) {
+			t.Errorf("expected white disk at %v", a)
+		}
+	}
+}
+
+func TestNewGameHumanBlack(t *testing.T) {
+	s := NewGame(OpponentAI, revgame.Black)
 	if s.Opponent != OpponentAI {
 		t.Errorf("opponent = %q, want %q", s.Opponent, OpponentAI)
 	}
 	if s.Board != revgame.OthelloBoard {
 		t.Errorf("board = %+v, want OthelloBoard %+v", s.Board, revgame.OthelloBoard)
 	}
-	black, white := s.Board.Scores()
-	if black != 2 || white != 2 {
-		t.Errorf("start scores = (%d,%d), want (2,2)", black, white)
+	assertStartPosition(t, s.Board)
+	if s.HumanColor() != revgame.Black {
+		t.Errorf("HumanColor = %v, want Black", s.HumanColor())
 	}
-	// d5/e4 black, d4/e5 white (x: d=3,e=4 ; y: row5=4, row4=3).
-	blackCells := []revgame.Address{{X: 3, Y: 4}, {X: 4, Y: 3}}
-	whiteCells := []revgame.Address{{X: 3, Y: 3}, {X: 4, Y: 4}}
-	for _, a := range blackCells {
-		if !isBlack(s.Board, a) {
-			t.Errorf("expected black disk at %v", a)
-		}
-	}
-	for _, a := range whiteCells {
-		if !isWhite(s.Board, a) {
-			t.Errorf("expected white disk at %v", a)
-		}
+	if s.OpponentColor() != revgame.White {
+		t.Errorf("OpponentColor = %v, want White", s.OpponentColor())
 	}
 	// Human (Black) moves first.
-	if s.Board.NextPlayer() != revgame.Black {
-		t.Errorf("NextPlayer = %v, want Black", s.Board.NextPlayer())
+	if !s.IsHumanTurn() {
+		t.Error("IsHumanTurn should be true for human=Black at the start")
+	}
+	if s.IsOpponentTurn() {
+		t.Error("IsOpponentTurn should be false for human=Black at the start")
 	}
 }
 
-// --- Legal human move flips and triggers exactly one opponent reply ----------
+func TestNewGameHumanWhite(t *testing.T) {
+	s := NewGame(OpponentRandom, revgame.White)
+	if s.Board != revgame.OthelloBoard {
+		t.Errorf("board = %+v, want OthelloBoard %+v", s.Board, revgame.OthelloBoard)
+	}
+	assertStartPosition(t, s.Board)
+	if s.HumanColor() != revgame.White {
+		t.Errorf("HumanColor = %v, want White", s.HumanColor())
+	}
+	if s.OpponentColor() != revgame.Black {
+		t.Errorf("OpponentColor = %v, want Black", s.OpponentColor())
+	}
+	// Black moves first, so the opponent is to move — not the human.
+	if !s.IsOpponentTurn() {
+		t.Error("IsOpponentTurn should be true for human=White at the start (Black moves first)")
+	}
+	if s.IsHumanTurn() {
+		t.Error("IsHumanTurn should be false for human=White at the start")
+	}
+}
 
-func TestLegalHumanMoveFlipsAndTriggersOneReply(t *testing.T) {
-	s := NewGame(OpponentRandom)
-	rnd := rand.New(rand.NewSource(42))
+// --- ApplyHumanMove: applies only the human move, opponent NOT yet played -----
+
+func TestApplyHumanMoveBlackFlipsAndYieldsOpponentTurn(t *testing.T) {
+	s := NewGame(OpponentRandom, revgame.Black)
 
 	// d3 = (x=3,y=2) is a legal Black opening that flanks the white on d4.
-	next, applied, err := s.HumanMove(revgame.Address{X: 3, Y: 2}, rnd)
+	before := s.Board.DisksCount() // 4
+	next, applied, err := s.ApplyHumanMove(revgame.Address{X: 3, Y: 2})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if !applied {
 		t.Fatal("expected the legal move to be applied")
 	}
-	// Start had 4 disks. Black placement (+1) and one White reply placement (+1) => 6.
-	if got := next.Board.DisksCount(); got != 6 {
-		t.Errorf("disk count = %d, want 6 (one black move + exactly one white reply)", got)
+	// Exactly the human's placement was added (no opponent disc yet): +1 disc.
+	if got := next.Board.DisksCount(); got != before+1 {
+		t.Errorf("disk count = %d, want %d (only the human's move, no opponent reply)", got, before+1)
 	}
-	// After the single white reply it is the human's turn again.
-	if next.Board.NextPlayer() != revgame.Black {
-		t.Errorf("NextPlayer = %v, want Black", next.Board.NextPlayer())
+	// The placed black disc is at d3, and the flanked white on d4 flipped to black.
+	if !isBlack(next.Board, revgame.Address{X: 3, Y: 2}) {
+		t.Error("expected the human's black disc at (3,2)")
 	}
-	// The board must actually have changed.
-	if next.Board == s.Board {
-		t.Error("board unchanged after a legal move")
+	if !isBlack(next.Board, revgame.Address{X: 3, Y: 3}) {
+		t.Error("expected the flanked disc at (3,3) to have flipped to black")
+	}
+	// The opponent has NOT moved yet: it is now the opponent's turn.
+	if !next.IsOpponentTurn() {
+		t.Error("after the human's move it should be the opponent's turn")
+	}
+	if next.IsHumanTurn() {
+		t.Error("after the human's move it should not still be the human's turn")
 	}
 }
 
-// --- Illegal / occupied tap is a no-op ---------------------------------------
+func TestApplyHumanMoveWhite(t *testing.T) {
+	// Drive Black's opening so it becomes White's turn, then let the human (White) move.
+	board, err := revgame.OthelloBoard.MakeMove(revgame.Black, revgame.Address{X: 3, Y: 2})
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	s := Snapshot{Board: board, Opponent: OpponentAI, Human: revgame.White}
+	if !s.IsHumanTurn() {
+		t.Fatalf("precondition: expected human (White) to be to move")
+	}
+	moves := s.Board.ValidMoves(revgame.White)
+	if len(moves) == 0 {
+		t.Fatal("precondition: White should have a legal move")
+	}
+	before := s.Board.DisksCount()
+	next, applied, err := s.ApplyHumanMove(moves[0])
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !applied {
+		t.Fatalf("legal white move %v was not applied", moves[0])
+	}
+	if got := next.Board.DisksCount(); got != before+1 {
+		t.Errorf("disk count = %d, want %d (only the human's move)", got, before+1)
+	}
+	if !isWhite(next.Board, moves[0]) {
+		t.Errorf("expected a white disc at the played cell %v", moves[0])
+	}
+	// Opponent (Black) has not replied yet.
+	if !next.IsOpponentTurn() {
+		t.Error("after the human's white move it should be the opponent's (Black) turn")
+	}
+}
 
-func TestIllegalTapIsNoop(t *testing.T) {
-	s := NewGame(OpponentAI)
+// --- ApplyHumanMove: illegal / occupied / not-your-turn are no-ops -----------
+
+func TestApplyHumanMoveIllegalTapIsNoop(t *testing.T) {
+	s := NewGame(OpponentAI, revgame.Black)
 
 	// Occupied cell d4 = (3,3) (a white disk).
-	next, applied, err := s.HumanMove(revgame.Address{X: 3, Y: 3}, nil)
+	next, applied, err := s.ApplyHumanMove(revgame.Address{X: 3, Y: 3})
 	if err != nil {
 		t.Fatalf("unexpected error on occupied tap: %v", err)
 	}
@@ -157,7 +235,7 @@ func TestIllegalTapIsNoop(t *testing.T) {
 	}
 
 	// Empty but illegal cell a1 = (0,0).
-	next2, applied2, err2 := s.HumanMove(revgame.Address{X: 0, Y: 0}, nil)
+	next2, applied2, err2 := s.ApplyHumanMove(revgame.Address{X: 0, Y: 0})
 	if err2 != nil {
 		t.Fatalf("unexpected error on illegal tap: %v", err2)
 	}
@@ -169,53 +247,87 @@ func TestIllegalTapIsNoop(t *testing.T) {
 	}
 }
 
-// --- Auto-pass: White has no reply, stays Black's turn, clean flip -----------
-
-func TestAutoPassWhenOpponentHasNoMove(t *testing.T) {
-	// Row 0: (0,0) empty, (1,0) white, (2,0..7,0) black -> Black can play (0,0),
-	// flipping the white at (1,0); white cannot move (blacks run to the edge).
-	// Row 2: same shape with a second white at (1,2) that survives, so after
-	// Black's move it is still Black's turn (White passes).
-	board := revgame.Board{
-		Blacks: revgame.Disks(0xFC | (0xFC << 16)),
-		Whites: revgame.Disks((1 << 1) | (1 << 17)),
-		Last:   revgame.Address{X: 1, Y: 0}, // a white cell => Black to move
+func TestApplyHumanMoveNotHumansTurn(t *testing.T) {
+	// Human is White but Black (the opponent) is to move on the fresh board.
+	s := NewGame(OpponentAI, revgame.White)
+	if !s.IsOpponentTurn() {
+		t.Fatalf("precondition: expected the opponent to be to move")
 	}
-	if board.NextPlayer() != revgame.Black {
-		t.Fatalf("precondition: NextPlayer = %v, want Black", board.NextPlayer())
-	}
-	if board.HasValidMoves(revgame.White) {
-		t.Fatal("precondition: White should have no move on this board")
-	}
-
-	s := Snapshot{Board: board, Opponent: OpponentRandom}
-	rnd := rand.New(rand.NewSource(7))
-
-	beforeWhite := board.Score(revgame.White) // 2
-	next, applied, err := s.HumanMove(revgame.Address{X: 0, Y: 0}, rnd)
+	// (2,3) is a legal Black opening, but the human plays White — must be a no-op.
+	next, applied, err := s.ApplyHumanMove(revgame.Address{X: 2, Y: 3})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !applied {
-		t.Fatal("expected the Black move to be applied")
+	if applied {
+		t.Error("ApplyHumanMove should not apply when it is not the human's turn")
 	}
-	// The flanked white at (1,0) must have flipped to black (clean, no reply).
-	if !isBlack(next.Board, revgame.Address{X: 1, Y: 0}) {
-		t.Error("flanked white at (1,0) should have flipped to black")
+	if next != s {
+		t.Errorf("snapshot changed when it was not the human's turn:\n got %+v\nwant %+v", next, s)
 	}
-	if isWhite(next.Board, revgame.Address{X: 1, Y: 0}) {
-		t.Error("cell (1,0) should no longer be white")
+}
+
+// --- PlayOpponent: exactly one reply in the normal case ----------------------
+
+func TestPlayOpponentPlaysOneReply(t *testing.T) {
+	s := NewGame(OpponentRandom, revgame.Black)
+	rnd := rand.New(rand.NewSource(42))
+
+	afterHuman, applied, err := s.ApplyHumanMove(revgame.Address{X: 3, Y: 2})
+	if err != nil || !applied {
+		t.Fatalf("setup ApplyHumanMove: applied=%v err=%v", applied, err)
 	}
-	// No White disk was added: white count only went DOWN (one flipped), never up.
-	if afterWhite := next.Board.Score(revgame.White); afterWhite >= beforeWhite {
-		t.Errorf("white score = %d, want < %d (white passed, one flipped)", afterWhite, beforeWhite)
+	before := afterHuman.Board.DisksCount() // 5
+
+	next, moved, err := afterHuman.PlayOpponent(rnd)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if next.Board.HasValidMoves(revgame.White) {
-		t.Error("White still has no move after Black's move")
+	if !moved {
+		t.Fatal("expected the opponent to move")
 	}
-	// It remains the human's turn.
-	if next.Board.NextPlayer() != revgame.Black {
-		t.Errorf("NextPlayer = %v, want Black (White auto-passed)", next.Board.NextPlayer())
+	// Exactly one opponent placement: +1 disc.
+	if got := next.Board.DisksCount(); got != before+1 {
+		t.Errorf("disk count = %d, want %d (exactly one opponent reply)", got, before+1)
+	}
+	// Control returns to the human (or the game is over — not here).
+	if !next.IsHumanTurn() {
+		t.Errorf("after the opponent's reply it should be the human's turn; NextPlayer=%v", next.Board.NextPlayer())
+	}
+}
+
+func TestPlayOpponentNoopOnHumansTurn(t *testing.T) {
+	s := NewGame(OpponentAI, revgame.Black) // human (Black) to move
+	next, moved, err := s.PlayOpponent(nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if moved {
+		t.Error("PlayOpponent should not move on the human's turn")
+	}
+	if next != s {
+		t.Errorf("snapshot changed on a PlayOpponent no-op:\n got %+v\nwant %+v", next, s)
+	}
+}
+
+func TestPlayOpponentWhiteHumanFirstReply(t *testing.T) {
+	// Human is White: the opponent (Black) makes the opening move.
+	s := NewGame(OpponentRandom, revgame.White)
+	rnd := rand.New(rand.NewSource(99))
+	if !s.IsOpponentTurn() {
+		t.Fatalf("precondition: opponent (Black) should move first")
+	}
+	next, moved, err := s.PlayOpponent(rnd)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !moved {
+		t.Fatal("expected the opponent to open")
+	}
+	if next.Board.DisksCount() != 5 {
+		t.Errorf("disk count = %d, want 5 (one Black opening move)", next.Board.DisksCount())
+	}
+	if !next.IsHumanTurn() {
+		t.Errorf("after Black's opening it should be the human's (White) turn; NextPlayer=%v", next.Board.NextPlayer())
 	}
 }
 
@@ -277,7 +389,7 @@ func TestOpponentMoveNoMove(t *testing.T) {
 // --- Rendering ---------------------------------------------------------------
 
 func TestRenderProduces8x8Keyboard(t *testing.T) {
-	s := NewGame(OpponentAI)
+	s := NewGame(OpponentAI, revgame.Black)
 	cellData := func(a revgame.Address) string { return fmt.Sprintf("d%02d", a.Index()) }
 
 	r := Render(s, cellData)
@@ -289,6 +401,7 @@ func TestRenderProduces8x8Keyboard(t *testing.T) {
 	if len(kb.Buttons) != 8 {
 		t.Fatalf("keyboard has %d rows, want 8", len(kb.Buttons))
 	}
+	sawHint := false
 	for y := 0; y < 8; y++ {
 		if len(kb.Buttons[y]) != 8 {
 			t.Fatalf("row %d has %d buttons, want 8", y, len(kb.Buttons[y]))
@@ -302,10 +415,20 @@ func TestRenderProduces8x8Keyboard(t *testing.T) {
 			if btn.Data != want {
 				t.Errorf("button [%d][%d] data = %q, want %q", y, x, btn.Data, want)
 			}
-			if btn.Text == "" {
-				t.Errorf("button [%d][%d] has empty face text", y, x)
+			switch btn.Text {
+			case glyphBlack, glyphWhite, glyphEmpty, glyphMove:
+				// expected faces
+			default:
+				t.Errorf("button [%d][%d] face = %q, not a known glyph", y, x, btn.Text)
+			}
+			if btn.Text == glyphMove {
+				sawHint = true
 			}
 		}
+	}
+	// Human (Black) is to move, so legal-move hints must be present.
+	if !sawHint {
+		t.Error("expected 🟢 legal-move hints on the human's turn")
 	}
 	if r.Text == "" {
 		t.Error("rendered text is empty")
@@ -313,6 +436,28 @@ func TestRenderProduces8x8Keyboard(t *testing.T) {
 	// Score line should mention the current score.
 	if !strings.Contains(r.Text, "2") {
 		t.Errorf("rendered text %q should include the start score", r.Text)
+	}
+}
+
+func TestRenderNoHintsOnOpponentTurn(t *testing.T) {
+	// Human is White; on the fresh board it is the opponent's (Black) turn, so
+	// there must be no 🟢 hints.
+	s := NewGame(OpponentAI, revgame.White)
+	r := Render(s, func(a revgame.Address) string { return "x" })
+	kb, ok := r.Keyboard.(*botkb.MessageKeyboard)
+	if !ok {
+		t.Fatalf("keyboard is %T, want *botkb.MessageKeyboard", r.Keyboard)
+	}
+	for y := 0; y < 8; y++ {
+		for x := 0; x < 8; x++ {
+			btn := kb.Buttons[y][x].(*botkb.DataButton)
+			if btn.Text == glyphMove {
+				t.Errorf("unexpected 🟢 hint at [%d][%d] on the opponent's turn", y, x)
+			}
+		}
+	}
+	if !strings.Contains(r.Text, "Opponent (Black) to move") {
+		t.Errorf("rendered text %q should say the opponent (Black) is to move", r.Text)
 	}
 }
 
@@ -324,7 +469,7 @@ func TestRenderCompletedBoardNoPanicAndShowsResult(t *testing.T) {
 	if !board.IsCompleted() {
 		t.Fatalf("precondition: board should be completed")
 	}
-	s := Snapshot{Board: board, Opponent: OpponentAI}
+	s := Snapshot{Board: board, Opponent: OpponentAI, Human: revgame.Black}
 	r := Render(s, func(a revgame.Address) string { return "x" })
 	if kb, ok := r.Keyboard.(*botkb.MessageKeyboard); !ok || len(kb.Buttons) != 8 {
 		t.Fatalf("expected an 8-row keyboard, got %T", r.Keyboard)
@@ -338,7 +483,7 @@ func TestRenderCompletedBoardNoPanicAndShowsResult(t *testing.T) {
 }
 
 func TestNewGameNotOver(t *testing.T) {
-	if NewGame(OpponentAI).IsGameOver() {
+	if NewGame(OpponentAI, revgame.Black).IsGameOver() {
 		t.Error("a fresh game must not be over")
 	}
 }

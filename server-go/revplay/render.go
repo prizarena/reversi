@@ -8,11 +8,12 @@ import (
 	"github.com/prizarena/reversi/server-go/revgame"
 )
 
-// Cell face glyphs used on the inline-keyboard buttons.
+// Cell face glyphs used on the inline-keyboard buttons. Black disks always show
+// ⚫ and White disks always show ⚪, regardless of which colour the human plays.
 const (
-	glyphBlack = "⚫" // the human's disks
-	glyphWhite = "⚪" // the opponent's disks
-	glyphMove  = "🟢" // a legal move for the human (Black), when it is their turn
+	glyphBlack = "⚫" // a Black disk
+	glyphWhite = "⚪" // a White disk
+	glyphMove  = "🟢" // a legal move for the human, shown only on the human's turn
 	glyphEmpty = "🟩" // an empty board cell
 )
 
@@ -25,7 +26,8 @@ type Rendered struct {
 }
 
 // Render builds the status text and an 8x8 inline keyboard for the snapshot —
-// one button per cell, its face a disk/empty/legal-move glyph.
+// one button per cell, its face a disk/empty/legal-move glyph. Legal-move hints
+// (🟢) are overlaid only when it is the human's turn, for the human's colour.
 //
 // cellData supplies each button's callback_data for the cell it targets. The
 // play layer never hardcodes the host's command code, so the host is expected
@@ -36,11 +38,11 @@ func Render(s Snapshot, cellData func(cell revgame.Address) string) Rendered {
 
 	// possibleMove="" so Rows never consults NextPlayer/getValidMoves (which
 	// panics for a Completed next-player on a board that still has empty cells);
-	// legal-move hints for the human are overlaid below, only when it is Black's
-	// turn — and ValidMoves(Black) is always safe to call.
+	// legal-move hints for the human are overlaid below, only when it is the
+	// human's turn — and ValidMoves(human) is always safe to call.
 	faces := b.Rows(glyphBlack, glyphWhite, "", glyphEmpty)
-	if !b.IsCompleted() && b.NextPlayer() == revgame.Black {
-		for _, m := range b.ValidMoves(revgame.Black) {
+	if s.IsHumanTurn() {
+		for _, m := range b.ValidMoves(s.Human) {
 			faces[m.Y][m.X] = glyphMove
 		}
 	}
@@ -61,14 +63,25 @@ func Render(s Snapshot, cellData func(cell revgame.Address) string) Rendered {
 	}
 }
 
-// IsGameOver reports whether the game has finished (neither side can move).
-// Hosts use it to decide whether to offer a "start a new game" affordance.
-func (s Snapshot) IsGameOver() bool {
-	return s.Board.IsCompleted()
+// diskName returns the human-readable colour name for a disk.
+func diskName(d revgame.Disk) string {
+	if d == revgame.White {
+		return "White"
+	}
+	return "Black"
+}
+
+// diskGlyph returns the board glyph for a disk colour.
+func diskGlyph(d revgame.Disk) string {
+	if d == revgame.White {
+		return glyphWhite
+	}
+	return glyphBlack
 }
 
 // statusText renders the score plus whose turn it is, or — when the game is
-// over — the final score and the winner (or a draw).
+// over — the final score and the winner (or a draw). The "your turn" line uses
+// the human's colour; the "opponent to move" line names the opponent's colour.
 func statusText(s Snapshot) string {
 	b := s.Board
 	black, white := b.Scores()
@@ -89,11 +102,11 @@ func statusText(s Snapshot) string {
 		return sb.String()
 	}
 
-	switch b.NextPlayer() {
-	case revgame.Black:
-		sb.WriteString("\nYour turn (Black).")
-	case revgame.White:
-		sb.WriteString("\nOpponent (White) to move.")
+	if s.IsHumanTurn() {
+		fmt.Fprintf(&sb, "\nYour turn (%s %s).", diskGlyph(s.Human), diskName(s.Human))
+	} else {
+		opp := s.OpponentColor()
+		fmt.Fprintf(&sb, "\nOpponent (%s) to move.", diskName(opp))
 	}
 	return sb.String()
 }
