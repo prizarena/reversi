@@ -42,7 +42,7 @@ func TestStatusText_WhiteWins(t *testing.T) {
 		t.Fatalf("precondition: board should be completed")
 	}
 	black, white := board.Scores()
-	if !(white > black) {
+	if white <= black {
 		t.Fatalf("precondition: expected white>black, got black=%d white=%d", black, white)
 	}
 	got := statusText(Snapshot{Board: board, Opponent: OpponentAI})

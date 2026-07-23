@@ -211,9 +211,9 @@ func TestBoard_getDisksToFlip_OpponentRunToEdge(t *testing.T) {
 
 func TestBoard_getDisksToFlip_Panics(t *testing.T) {
 	expectPanic(t, "getDisksToFlip off-board", func() {
-		OthelloBoard.getDisksToFlip(Address{X: -1, Y: -1}, Black)
+		_, _ = OthelloBoard.getDisksToFlip(Address{X: -1, Y: -1}, Black)
 	})
 	expectPanic(t, "getDisksToFlip unknown player", func() {
-		OthelloBoard.getDisksToFlip(Address{X: 2, Y: 2}, Empty)
+		_, _ = OthelloBoard.getDisksToFlip(Address{X: 2, Y: 2}, Empty)
 	})
 }
