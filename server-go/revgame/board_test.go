@@ -3,7 +3,6 @@ package revgame
 import (
 	"testing"
 	"github.com/pkg/errors"
-	"github.com/prizarena/turn-based"
 )
 
 func TestBoard_DrawBoard(t *testing.T) {
@@ -92,7 +91,7 @@ func TestBoard_UndoMove(t *testing.T) {
 
 	steps := []struct {
 		p Disk
-		ca turnbased.CellAddress
+		ca CellAddress
 		board Board
 	} {
 		{p: White, board: OthelloBoard},

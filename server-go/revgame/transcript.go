@@ -2,8 +2,7 @@ package revgame
 
 import (
 	"github.com/pkg/errors"
-		"github.com/prizarena/turn-based"
-	"bytes"
+		"bytes"
 	"fmt"
 )
 
@@ -28,7 +27,7 @@ func NewTranscript(s string) (transcript Transcript) {
 	transcript = make(Transcript, len(s))
 	for i, b := range []byte(s) {
 		if v := bytes.IndexByte(encodeURL, b); v < 0 {
-			panic(fmt.Sprintf("unkonw transcript code: " + string(v)))
+			panic(fmt.Sprintf("unknown transcript code: %q", b))
 		} else {
 			transcript[i] = byte(v)
 		}
@@ -47,7 +46,7 @@ func NewTranscriptFromHumanReadable(s string) (transcript Transcript) {
 
 	transcript = make(Transcript, count)
 	for i := 0; i<count; i++ {
-		cell := turnbased.CellAddress(s[i*2:i*2+2])
+		cell := CellAddress(s[i*2:i*2+2])
 		transcript[i] = byte(Address{X: int8(cell.X()), Y: int8(cell.Y())}.ToMove())
 	}
 	return
@@ -65,7 +64,7 @@ func (t Transcript) String() string {
 	s := make([]byte, len(t)*2)
 	for i, v := range t {
 		a := Move(v).Address()
-		ca := turnbased.NewCellAddress(int(a.X), int(a.Y))
+		ca := NewCellAddress(int(a.X), int(a.Y))
 		j := i*2
 		s[j] = ca[0]
 		s[j+1] = ca[1]

@@ -2,7 +2,6 @@ package revgame
 
 import (
 	"testing"
-	"github.com/prizarena/turn-based"
 )
 
 func TestTranscript_ToBase64(t *testing.T) {
@@ -12,7 +11,7 @@ func TestTranscript_ToBase64(t *testing.T) {
 	}
 
 	for i, step := range []struct {
-		ca turnbased.CellAddress
+		ca CellAddress
 		expects string
 	}{
 		{ca: "B1", expects: "B"},

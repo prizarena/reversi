@@ -6,8 +6,6 @@ import (
 	"strings"
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/prizarena/turn-based"
-	"github.com/strongo/emoji/go/emoji"
 	"encoding/binary"
 	"encoding/base64"
 )
@@ -193,7 +191,7 @@ func (b Board) DrawBoardAsText(possibleMove string) string {
 }
 
 func (b Board) DrawBoardAsEmoji(black, white, possibleMove string) string {
-	return b.DrawBoard(emoji.BlackCircle, emoji.WhiteCircle, ".", "", "\n")
+	return b.DrawBoard("⚫️", "⚪️", ".", "", "\n")
 }
 
 
@@ -218,8 +216,8 @@ type Address struct {
 	X, Y int8
 }
 
-func (a Address) ToCellAddress() turnbased.CellAddress {
-	return turnbased.NewCellAddress(int(a.X), int(a.Y))
+func (a Address) ToCellAddress() CellAddress {
+	return NewCellAddress(int(a.X), int(a.Y))
 }
 
 func (a Address) Index() int8 {
@@ -453,7 +451,7 @@ func (b Board) Score(player Disk) int {
 	}
 }
 
-func CellAddressToRevAddress(ca turnbased.CellAddress) Address {
+func CellAddressToRevAddress(ca CellAddress) Address {
 	//if ca == "" {
 	//	return EmptyAddress
 	//}
