@@ -1,0 +1,7 @@
+# SpecScore Repo Config Schema: https://specscore.md/repo-config
+
+project:
+    title: Reversi
+    host: github.com
+    org: prizarena
+    repo: reversi

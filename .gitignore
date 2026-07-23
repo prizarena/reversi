@@ -14,3 +14,4 @@
 *.out
 
 server-go/revsecrets/secrets.go
+specscore.local.yaml
