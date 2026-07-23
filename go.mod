@@ -1,6 +1,6 @@
 module github.com/prizarena/reversi
 
-go 1.20
+go 1.25
 
 require (
 	cloud.google.com/go v0.110.0 // indirect
@@ -8,6 +8,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/firestore v1.9.0 // indirect
 	cloud.google.com/go/longrunning v0.4.1 // indirect
+	github.com/bots-go-framework/bots-go-core v0.2.5
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
