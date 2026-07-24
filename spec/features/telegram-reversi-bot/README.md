@@ -5,7 +5,7 @@ status: Draft
 
 # Feature: Telegram Reversi bot (vs AI, state in callback data)
 
-> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/prizarena/reversi/spec/features/telegram-reversi-bot?op=explore) | [Edit](https://specscore.studio/app/github.com/prizarena/reversi/spec/features/telegram-reversi-bot?op=edit) | [Ask question](https://specscore.studio/app/github.com/prizarena/reversi/spec/features/telegram-reversi-bot?op=ask) | [Request change](https://specscore.studio/app/github.com/prizarena/reversi/spec/features/telegram-reversi-bot?op=request-change) |
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/sneat-games/reversi/spec/features/telegram-reversi-bot?op=explore) | [Edit](https://specscore.studio/app/github.com/sneat-games/reversi/spec/features/telegram-reversi-bot?op=edit) | [Ask question](https://specscore.studio/app/github.com/sneat-games/reversi/spec/features/telegram-reversi-bot?op=ask) | [Request change](https://specscore.studio/app/github.com/sneat-games/reversi/spec/features/telegram-reversi-bot?op=request-change) |
 **Status:** Draft
 **Source Ideas:** reversi-as-a-sneat-bot-game
 

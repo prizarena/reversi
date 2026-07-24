@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/bots-go-framework/bots-go-core/botkb"
-	"github.com/prizarena/reversi/server-go/revgame"
+	"github.com/sneat-games/reversi/server-go/revgame"
 )
 
 // Cell face glyphs used on the inline-keyboard buttons. Black disks always show

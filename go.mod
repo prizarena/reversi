@@ -1,4 +1,4 @@
-module github.com/prizarena/reversi
+module github.com/sneat-games/reversi
 
 go 1.25
 

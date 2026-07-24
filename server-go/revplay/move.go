@@ -3,7 +3,7 @@ package revplay
 import (
 	"math/rand"
 
-	"github.com/prizarena/reversi/server-go/revgame"
+	"github.com/sneat-games/reversi/server-go/revgame"
 )
 
 // ApplyHumanMove applies ONLY the human's move (their colour) at cell. It does
