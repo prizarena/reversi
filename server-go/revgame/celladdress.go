@@ -1,7 +1,7 @@
 package revgame
 
 // CellAddress is coded as "CharDigit" where Char is X and Digit is Y, e.g. A1, B2, C3.
-// Inlined from the former github.com/prizarena/turn-based dependency (only the small
+// Inlined from the former github.com/sneat-games/turn-based dependency (only the small
 // coordinate helper revgame actually used), keeping the engine dependency-light.
 type CellAddress string
 

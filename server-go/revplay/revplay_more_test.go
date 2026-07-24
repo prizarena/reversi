@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/prizarena/reversi/server-go/revgame"
+	"github.com/sneat-games/reversi/server-go/revgame"
 )
 
 // --- statusText branches -----------------------------------------------------

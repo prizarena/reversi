@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/prizarena/reversi/server-go/revgame"
+	"github.com/sneat-games/reversi/server-go/revgame"
 )
 
 // Opponent identifies which built-in robotic player takes the opponent's moves.

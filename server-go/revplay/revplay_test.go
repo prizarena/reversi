@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/bots-go-framework/bots-go-core/botkb"
-	"github.com/prizarena/reversi/server-go/revgame"
+	"github.com/sneat-games/reversi/server-go/revgame"
 )
 
 func containsAddr(addrs []revgame.Address, a revgame.Address) bool {
